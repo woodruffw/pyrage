@@ -1,0 +1,29 @@
+[package]
+name = "pyrage"
+version = "0.1.0"
+authors = ["William Woodruff <william@yossarian.net>"]
+edition = "2021"
+description = "Python bindings for rage (age in Rust)"
+homepage = "https://github.com/woodruffw/pyrage"
+repository = "https://github.com/woodruffw/pyrage"
+readme = "README.md"
+license = "MIT"
+
+[package.metadata.release]
+dev-version = false
+publish = false # handled by GitHub Actions
+push = true
+
+[package.metadata.maturin]
+classifier = [
+  "Programming Language :: Rust",
+  "Operating System :: POSIX :: Linux",
+]
+requires-python = ">=3.7"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+age = { version = "0.8", features = ["ssh"] }
+pyo3 = { version = "0.16", features = ["extension-module"] }
