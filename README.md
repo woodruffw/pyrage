@@ -13,17 +13,7 @@ Python bindings for the [Rust implementation of `age`](https://github.com/str4d/
 
 ## Installation
 
-You can install `pyrage` via `pip`:
-
-```console
-$ pip install pyrage
-```
-
-Optionally, if you'd like type hints, you can install the `pyrage-stubs` package as well:
-
-```console
-$ pip install pyrage-stubs
-```
+`pip` instructions coming soon.
 
 See the [development instructions](#development) below for manual installations.
 
