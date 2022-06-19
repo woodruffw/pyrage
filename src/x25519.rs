@@ -16,7 +16,7 @@ impl Recipient {
             .map_err(PyValueError::new_err)
     }
 
-    fn to_string(&self) -> String {
+    fn __str__(&self) -> String {
         self.0.to_string()
     }
 }
@@ -32,12 +32,12 @@ impl Identity {
         Self(age::x25519::Identity::generate())
     }
 
-    fn to_string(&self) -> String {
-        self.0.to_string().expose_secret().into()
-    }
-
     fn to_public(&self) -> Recipient {
         Recipient(self.0.to_public())
+    }
+
+    fn __str__(&self) -> String {
+        self.0.to_string().expose_secret().into()
     }
 }
 
@@ -47,5 +47,5 @@ pub(crate) fn x25519(py: Python) -> PyResult<&PyModule> {
     module.add_class::<Recipient>()?;
     module.add_class::<Identity>()?;
 
-    Ok(&module)
+    Ok(module)
 }
