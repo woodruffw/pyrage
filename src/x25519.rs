@@ -3,7 +3,7 @@ use std::str::FromStr;
 use age::secrecy::ExposeSecret;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyType};
 
-#[pyclass]
+#[pyclass(module = "pyrage.x25519")]
 #[derive(Clone)]
 pub(crate) struct Recipient(pub(crate) age::x25519::Recipient);
 
@@ -21,7 +21,7 @@ impl Recipient {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "pyrage.x25519")]
 #[derive(Clone)]
 pub(crate) struct Identity(pub(crate) age::x25519::Identity);
 
@@ -41,7 +41,7 @@ impl Identity {
     }
 }
 
-pub(crate) fn x25519(py: Python) -> PyResult<&PyModule> {
+pub(crate) fn module(py: Python) -> PyResult<&PyModule> {
     let module = PyModule::new(py, "x25519")?;
 
     module.add_class::<Recipient>()?;
