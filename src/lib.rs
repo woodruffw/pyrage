@@ -5,6 +5,7 @@ use age_core::format::{FileKey, Stanza};
 use pyo3::{
     exceptions::{PyTypeError, PyValueError},
     prelude::*,
+    py_run,
     types::PyBytes,
 };
 
@@ -166,7 +167,16 @@ fn decrypt<'p>(
 
 #[pymodule]
 fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_submodule(x25519::x25519(py)?)?;
+    // HACK(ww): pyO3 modules are not packages, so we need this nasty
+    // `py_run!` hack to support `from pyrage import ...` and similar
+    // import patterns.
+    let x25519 = x25519::module(py)?;
+    py_run!(
+        py,
+        x25519,
+        "import sys; sys.modules['pyrage.x25519'] = x25519"
+    );
+    m.add_submodule(x25519)?;
 
     m.add_wrapped(wrap_pyfunction!(encrypt))?;
     m.add_wrapped(wrap_pyfunction!(decrypt))?;
