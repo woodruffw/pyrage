@@ -4,7 +4,8 @@ use age::secrecy::ExposeSecret;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyType};
 
 #[pyclass]
-struct Recipient(age::x25519::Recipient);
+#[derive(Clone)]
+pub(crate) struct Recipient(pub(crate) age::x25519::Recipient);
 
 #[pymethods]
 impl Recipient {
@@ -15,13 +16,14 @@ impl Recipient {
             .map_err(PyValueError::new_err)
     }
 
-    fn to_string(&self) -> String {
+    fn __str__(&self) -> String {
         self.0.to_string()
     }
 }
 
 #[pyclass]
-struct Identity(age::x25519::Identity);
+#[derive(Clone)]
+pub(crate) struct Identity(pub(crate) age::x25519::Identity);
 
 #[pymethods]
 impl Identity {
@@ -30,12 +32,12 @@ impl Identity {
         Self(age::x25519::Identity::generate())
     }
 
-    fn to_string(&self) -> String {
-        self.0.to_string().expose_secret().into()
-    }
-
     fn to_public(&self) -> Recipient {
         Recipient(self.0.to_public())
+    }
+
+    fn __str__(&self) -> String {
+        self.0.to_string().expose_secret().into()
     }
 }
 
@@ -45,5 +47,5 @@ pub(crate) fn x25519(py: Python) -> PyResult<&PyModule> {
     module.add_class::<Recipient>()?;
     module.add_class::<Identity>()?;
 
-    Ok(&module)
+    Ok(module)
 }
