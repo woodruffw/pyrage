@@ -4,7 +4,8 @@ use age::secrecy::ExposeSecret;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyType};
 
 #[pyclass]
-struct Recipient(age::x25519::Recipient);
+#[derive(Clone)]
+pub(crate) struct Recipient(pub(crate) age::x25519::Recipient);
 
 #[pymethods]
 impl Recipient {
@@ -21,7 +22,7 @@ impl Recipient {
 }
 
 #[pyclass]
-struct Identity(age::x25519::Identity);
+pub(crate) struct Identity(age::x25519::Identity);
 
 #[pymethods]
 impl Identity {

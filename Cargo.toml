@@ -25,5 +25,6 @@ requires-python = ">=3.7"
 crate-type = ["cdylib"]
 
 [dependencies]
+age-core = "0.8"
 age = { version = "0.8", features = ["ssh"] }
 pyo3 = { version = "0.16", features = ["extension-module"] }
