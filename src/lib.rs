@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use age::{EncryptError, Encryptor, Recipient};
+use age::{DecryptError, EncryptError, Encryptor, Identity, Recipient};
 use age_core::format::{FileKey, Stanza};
 use pyo3::{
     exceptions::{PyTypeError, PyValueError},
@@ -18,11 +18,19 @@ trait PyrageRecipient: Recipient {
     fn as_recipient(self: Box<Self>) -> Box<dyn Recipient>;
 }
 
+// This is a wrapper trait for age's `Identity`, providing trait downcasting.
+//
+// We need this so that we can pass multiple different types of identities
+// into the Python-level `decrypt` API.
+trait PyrageIdentity: Identity {
+    fn as_identity(&self) -> &dyn Identity;
+}
+
 // This macro generates two trait impls for each passed in type:
 //
 // * An age `Receipient` impl, using the underlying trait impl.
 // * A `PyrageRecipient` impl, by consuming the instance and downcasting.
-macro_rules! trait_wrappers {
+macro_rules! recipient_traits {
     ($($t:ty),+) => {
         $(
             impl Recipient for $t {
@@ -40,7 +48,31 @@ macro_rules! trait_wrappers {
     }
 }
 
-trait_wrappers!(x25519::Recipient);
+recipient_traits!(x25519::Recipient);
+
+// This macro generates two trait impls for each passed in type:
+//
+// * An age `Identity` impl, using the underlying trait impl.
+// * A `PyrageIdentity` impl, by borrowing the instance and downcasting.
+macro_rules! identity_traits {
+    ($($t:ty),+) => {
+        $(
+            impl Identity for $t {
+                fn unwrap_stanza(&self, stanza: &Stanza) -> Option<Result<FileKey, DecryptError>> {
+                    self.0.unwrap_stanza(stanza)
+                }
+            }
+
+            impl PyrageIdentity for $t {
+                fn as_identity(&self) -> &dyn Identity {
+                    self as &dyn Identity
+                }
+            }
+        )*
+    }
+}
+
+identity_traits!(x25519::Identity);
 
 // This is where the magic happens, and why we need to do the trait dance
 // above: `FromPyObject` is a third-party trait, so we need to implement it
@@ -56,6 +88,20 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
         } else {
             Err(PyTypeError::new_err(
                 "invalid type (expected a recipient type)",
+            ))
+        }
+    }
+}
+
+// Similar to the above: we try to turn the `PyAny` into a concrete identity type,
+// which we then perform the trait cast on.
+impl<'source> FromPyObject<'source> for Box<dyn PyrageIdentity> {
+    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+        if let Ok(identity) = ob.extract::<x25519::Identity>() {
+            Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
+        } else {
+            Err(PyTypeError::new_err(
+                "invalid type (expected an identity type)",
             ))
         }
     }
@@ -85,6 +131,15 @@ fn encrypt<'p>(
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
 
     Ok(PyBytes::new(py, &encrypted))
+}
+
+#[pyfunction]
+fn decrypt<'p>(
+    _py: Python<'p>,
+    _ciphertext: &[u8],
+    _identities: Vec<Box<dyn PyrageIdentity>>,
+) -> PyResult<&'p PyBytes> {
+    unimplemented!();
 }
 
 #[pymodule]

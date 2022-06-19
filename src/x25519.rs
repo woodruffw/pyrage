@@ -22,7 +22,8 @@ impl Recipient {
 }
 
 #[pyclass]
-pub(crate) struct Identity(age::x25519::Identity);
+#[derive(Clone)]
+pub(crate) struct Identity(pub(crate) age::x25519::Identity);
 
 #[pymethods]
 impl Identity {
