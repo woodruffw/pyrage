@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{Read, Write};
 
 use age::{DecryptError, EncryptError, Encryptor, Identity, Recipient};
 use age_core::format::{FileKey, Stanza};
@@ -130,16 +130,38 @@ fn encrypt<'p>(
         .finish()
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
 
+    // TODO: Avoid this copy. Maybe PyBytes::new_with?
     Ok(PyBytes::new(py, &encrypted))
 }
 
 #[pyfunction]
 fn decrypt<'p>(
-    _py: Python<'p>,
-    _ciphertext: &[u8],
-    _identities: Vec<Box<dyn PyrageIdentity>>,
+    py: Python<'p>,
+    ciphertext: &[u8],
+    identities: Vec<Box<dyn PyrageIdentity>>,
 ) -> PyResult<&'p PyBytes> {
-    unimplemented!();
+    let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
+
+    let decryptor =
+        match age::Decryptor::new(ciphertext).map_err(|e| PyValueError::new_err(e.to_string()))? {
+            age::Decryptor::Recipients(d) => d,
+            age::Decryptor::Passphrase(_) => {
+                return Err(PyValueError::new_err(
+                    "invalid ciphertext (encrypted with passphrase, not identities)",
+                ))
+            }
+        };
+
+    let mut decrypted = vec![];
+    let mut reader = decryptor
+        .decrypt(identities)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    reader
+        .read_to_end(&mut decrypted)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    // TODO: Avoid this copy. Maybe PyBytes::new_with?
+    Ok(PyBytes::new(py, &decrypted))
 }
 
 #[pymodule]
@@ -147,6 +169,7 @@ fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_submodule(x25519::x25519(py)?)?;
 
     m.add_wrapped(wrap_pyfunction!(encrypt))?;
+    m.add_wrapped(wrap_pyfunction!(decrypt))?;
 
     Ok(())
 }

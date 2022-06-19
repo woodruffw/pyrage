@@ -12,8 +12,12 @@ env/pyvenv.cfg:
 
 .PHONY: develop
 develop: env/pyvenv.cfg
-	./env/bin/maturin develop
+	. ./env/bin/activate && maturin develop
 
 .PHONY: build
 build: env/pyvenv.cfg
-	./env/bin/maturin build
+	. ./env/bin/activate && maturin build
+
+.PHONY: test
+test: develop
+	./env/bin/python -m unittest
