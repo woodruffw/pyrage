@@ -23,9 +23,9 @@ test: develop
 dist: dist-pyrage dist-pyrage-stubs
 
 .PHONY: dist-pyrage
-dist-pyrage:
+dist-pyrage: env
 	docker run --rm -v $(shell pwd):/io konstin2/maturin build --release --strip --out dist
 
 .PHONY: dist-pyrage-stubs
-dist-pyrage-stubs:
+dist-pyrage-stubs: env
 	./env/bin/python -m build ./pyrage-stubs --outdir dist
