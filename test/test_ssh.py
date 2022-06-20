@@ -6,7 +6,11 @@ from .utils import ssh_keypair
 
 
 class TestIdentity(unittest.TestCase):
-    pass
+    def test_from_buffer(self):
+        for filename in ["ed25519", "rsa4096", "rsa2048"]:
+            _pubkey, privkey = ssh_keypair(filename)
+            identity = ssh.Identity.from_buffer(privkey.encode())
+            self.assertIsInstance(identity, ssh.Identity)
 
 
 class TestRecipient(unittest.TestCase):
