@@ -15,8 +15,11 @@ class TestIdentity(unittest.TestCase):
     def test_from_str(self):
         generated = x25519.Identity.generate()
         parsed = x25519.Identity.from_str(str(generated))
-        self.assertEqual(generated, parsed)
         self.assertIsInstance(parsed, x25519.Identity)
+
+    def test_from_str_invalid(self):
+        with self.assertRaisesRegex(ValueError, "invalid Bech32 encoding"):
+            x25519.Identity.from_str("BAD-PREFIX")
 
 
 class TestRecipient(unittest.TestCase):
@@ -29,6 +32,10 @@ class TestRecipient(unittest.TestCase):
             str(recipient),
             "age1zvkyg2lqzraa2lnjvqej32nkuu0ues2s82hzrye869xeexvn73equnujwj",
         )
+
+    def test_from_str_invalid(self):
+        with self.assertRaisesRegex(ValueError, "invalid Bech32 encoding"):
+            x25519.Recipient.from_str("badprefix")
 
 
 if __name__ == "__main__":
