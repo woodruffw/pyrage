@@ -25,6 +25,8 @@ requires-python = ">=3.7"
 crate-type = ["cdylib"]
 
 [dependencies]
-age-core = "0.8"
-age = { version = "0.8", features = ["ssh"] }
+# age-core = "0.8"
+age-core = { git = "https://github.com/woodruffw-forks/rage", branch = "ww/ssh-identity-cloneable" }
+# TODO: https://github.com/str4d/rage/pull/329
+age = { git = "https://github.com/woodruffw-forks/rage", branch = "ww/ssh-identity-cloneable", features = ["ssh"] }
 pyo3 = { version = "0.16", features = ["extension-module"] }
