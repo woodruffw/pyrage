@@ -8,7 +8,7 @@ pub(crate) struct Recipient(pub(crate) age::ssh::Recipient);
 #[pymethods]
 impl Recipient {
     #[classmethod]
-    fn from_string(_cls: &PyType, v: &str) -> PyResult<Self> {
+    fn from_str(_cls: &PyType, v: &str) -> PyResult<Self> {
         let recipient = age::ssh::Recipient::from_str(v)
             .map_err(|e| PyValueError::new_err(format!("invalid public key: {:?}", e)))?;
 
