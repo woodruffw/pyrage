@@ -8,11 +8,11 @@ class TestPyrage(unittest.TestCase):
         identity = pyrage.x25519.Identity.generate()
         recipient = identity.to_public()
 
-        encrypted = pyrage.encrypt(b'test', [recipient])
+        encrypted = pyrage.encrypt(b"test", [recipient])
         decrypted = pyrage.decrypt(encrypted, [identity])
 
-        self.assertEqual(b'test', decrypted)
+        self.assertEqual(b"test", decrypted)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
