@@ -3,6 +3,7 @@ use std::str::FromStr;
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyType};
 
 #[pyclass(module = "pyrage.ssh")]
+#[derive(Clone)]
 pub(crate) struct Recipient(pub(crate) age::ssh::Recipient);
 
 #[pymethods]
@@ -17,6 +18,7 @@ impl Recipient {
 }
 
 #[pyclass(module = "pyrage.ssh")]
+#[derive(Clone)]
 pub(crate) struct Identity(pub(crate) age::ssh::Identity);
 
 #[pymethods]

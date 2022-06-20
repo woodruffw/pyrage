@@ -87,6 +87,8 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
         if let Ok(recipient) = ob.extract::<x25519::Recipient>() {
             Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
+        } else if let Ok(recipient) = ob.extract::<ssh::Recipient>() {
+            Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
         } else {
             Err(PyTypeError::new_err(
                 "invalid type (expected a recipient type)",
@@ -100,6 +102,8 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
 impl<'source> FromPyObject<'source> for Box<dyn PyrageIdentity> {
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
         if let Ok(identity) = ob.extract::<x25519::Identity>() {
+            Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
+        } else if let Ok(identity) = ob.extract::<ssh::Identity>() {
             Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
         } else {
             Err(PyTypeError::new_err(
