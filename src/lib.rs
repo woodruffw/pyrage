@@ -9,6 +9,7 @@ use pyo3::{
     types::PyBytes,
 };
 
+mod ssh;
 mod x25519;
 
 // This is a wrapper trait for age's `Recipient`, providing trait downcasting.
@@ -49,7 +50,7 @@ macro_rules! recipient_traits {
     }
 }
 
-recipient_traits!(x25519::Recipient);
+recipient_traits!(ssh::Recipient, x25519::Recipient);
 
 // This macro generates two trait impls for each passed in type:
 //
@@ -73,7 +74,7 @@ macro_rules! identity_traits {
     }
 }
 
-identity_traits!(x25519::Identity);
+identity_traits!(ssh::Identity, x25519::Identity);
 
 // This is where the magic happens, and why we need to do the trait dance
 // above: `FromPyObject` is a third-party trait, so we need to implement it
@@ -85,6 +86,8 @@ identity_traits!(x25519::Identity);
 impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
         if let Ok(recipient) = ob.extract::<x25519::Recipient>() {
+            Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
+        } else if let Ok(recipient) = ob.extract::<ssh::Recipient>() {
             Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
         } else {
             Err(PyTypeError::new_err(
@@ -99,6 +102,8 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
 impl<'source> FromPyObject<'source> for Box<dyn PyrageIdentity> {
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
         if let Ok(identity) = ob.extract::<x25519::Identity>() {
+            Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
+        } else if let Ok(identity) = ob.extract::<ssh::Identity>() {
             Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
         } else {
             Err(PyTypeError::new_err(
@@ -177,6 +182,10 @@ fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
         "import sys; sys.modules['pyrage.x25519'] = x25519"
     );
     m.add_submodule(x25519)?;
+
+    let ssh = ssh::module(py)?;
+    py_run!(py, ssh, "import sys; sys.modules['pyrage.ssh'] = ssh");
+    m.add_submodule(ssh)?;
 
     m.add_wrapped(wrap_pyfunction!(encrypt))?;
     m.add_wrapped(wrap_pyfunction!(decrypt))?;

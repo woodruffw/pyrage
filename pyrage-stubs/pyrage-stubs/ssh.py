@@ -3,14 +3,11 @@ from __future__ import annotations
 
 class Identity:
     @classmethod
-    def generate(cls) -> Identity:
-        ...
-
-    def to_public(self) -> Recipient:
+    def from_buffer(cls, buf: bytes) -> Identity:
         ...
 
 
 class Recipient:
     @classmethod
-    def from_str(cls) -> Recipient:
+    def from_str(cls, v: str) -> Recipient:
         ...

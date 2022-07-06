@@ -25,6 +25,8 @@ requires-python = ">=3.7"
 crate-type = ["cdylib"]
 
 [dependencies]
-age-core = "0.8"
-age = { version = "0.8", features = ["ssh"] }
+# age-core = "0.8"
+# age = { version = "0.8", features = ["ssh"] }
+age-core = { git = "https://github.com/str4d/rage", branch = "main" }
+age = { git = "https://github.com/str4d/rage", branch = "main", features = ["ssh"] }
 pyo3 = { version = "0.16", features = ["extension-module"] }

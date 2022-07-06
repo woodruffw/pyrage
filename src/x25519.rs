@@ -10,7 +10,7 @@ pub(crate) struct Recipient(pub(crate) age::x25519::Recipient);
 #[pymethods]
 impl Recipient {
     #[classmethod]
-    fn from_string(_cls: &PyType, v: &str) -> PyResult<Self> {
+    fn from_str(_cls: &PyType, v: &str) -> PyResult<Self> {
         age::x25519::Recipient::from_str(v)
             .map(Self)
             .map_err(PyValueError::new_err)
@@ -30,6 +30,14 @@ impl Identity {
     #[classmethod]
     fn generate(_cls: &PyType) -> Self {
         Self(age::x25519::Identity::generate())
+    }
+
+    #[classmethod]
+    fn from_str(_cls: &PyType, v: &str) -> PyResult<Self> {
+        let identity =
+            age::x25519::Identity::from_str(v).map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+        Ok(Self(identity))
     }
 
     fn to_public(&self) -> Recipient {
