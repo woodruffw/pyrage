@@ -1,0 +1,52 @@
+use std::io::{Read, Write};
+
+use age::{secrecy::Secret, Decryptor, Encryptor};
+use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
+
+#[pyfunction]
+fn encrypt<'p>(py: Python<'p>, plaintext: &[u8], passphrase: &str) -> PyResult<&'p PyBytes> {
+    let encryptor = Encryptor::with_user_passphrase(Secret::new(passphrase.into()));
+    let mut encrypted = vec![];
+    let mut writer = encryptor
+        .wrap_output(&mut encrypted)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    writer
+        .write_all(plaintext)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    writer
+        .finish()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    Ok(PyBytes::new(py, &encrypted))
+}
+
+#[pyfunction]
+fn decrypt<'p>(py: Python<'p>, ciphertext: &[u8], passphrase: &str) -> PyResult<&'p PyBytes> {
+    let decryptor =
+        match Decryptor::new(ciphertext).map_err(|e| PyValueError::new_err(e.to_string()))? {
+            Decryptor::Passphrase(d) => d,
+            _ => {
+                return Err(PyValueError::new_err(
+                    "invalid ciphertext (not passphrase encrypted)",
+                ))
+            }
+        };
+    let mut decrypted = vec![];
+    let mut reader = decryptor
+        .decrypt(&Secret::new(passphrase.into()), None)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    reader
+        .read_to_end(&mut decrypted)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    Ok(PyBytes::new(py, &decrypted))
+}
+
+pub(crate) fn module(py: Python) -> PyResult<&PyModule> {
+    let module = PyModule::new(py, "passphrase")?;
+
+    module.add_wrapped(wrap_pyfunction!(encrypt))?;
+    module.add_wrapped(wrap_pyfunction!(decrypt))?;
+
+    Ok(module)
+}
