@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use std::io::{Read, Write};
 
 use age::{DecryptError, EncryptError, Encryptor, Identity, Recipient};
