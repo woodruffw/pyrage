@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use std::io::{Read, Write};
 
 use age::{DecryptError, EncryptError, Encryptor, Identity, Recipient};
@@ -9,6 +11,7 @@ use pyo3::{
     types::PyBytes,
 };
 
+mod passphrase;
 mod ssh;
 mod x25519;
 
@@ -186,6 +189,14 @@ fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
     let ssh = ssh::module(py)?;
     py_run!(py, ssh, "import sys; sys.modules['pyrage.ssh'] = ssh");
     m.add_submodule(ssh)?;
+
+    let passphrase = passphrase::module(py)?;
+    py_run!(
+        py,
+        passphrase,
+        "import sys; sys.modules['pyrage.passphrase'] = passphrase"
+    );
+    m.add_submodule(passphrase)?;
 
     m.add_wrapped(wrap_pyfunction!(encrypt))?;
     m.add_wrapped(wrap_pyfunction!(decrypt))?;
