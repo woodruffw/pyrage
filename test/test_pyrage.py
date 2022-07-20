@@ -15,6 +15,21 @@ class TestPyrage(unittest.TestCase):
 
         self.assertEqual(b"test", decrypted)
 
+    def test_decrypt_fails_wrong_recipient(self):
+        alice = pyrage.x25519.Identity.generate()
+        bob = pyrage.x25519.Identity.generate()
+
+        # alice encrypts to herself
+        encrypted = pyrage.encrypt(b"test", [alice.to_public()])
+
+        # bob tries to decrypt and fails
+        with self.assertRaisesRegex(ValueError, "No matching keys found"):
+            pyrage.decrypt(encrypted, [bob])
+
+        # one key matches, so decryption succeeds
+        decrypted = pyrage.decrypt(encrypted, [alice, bob])
+        self.assertEqual(b"test", decrypted)
+
     def test_roundtrip_matrix(self):
         identities = []
         recipients = []
