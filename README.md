@@ -10,6 +10,7 @@ Python bindings for the [Rust implementation of `age`](https://github.com/str4d/
 * [Installation](#installation)
 * [Usage](#usage)
 * [Development](#development)
+* [Licensing](#licensing)
 
 ## Installation
 
@@ -78,3 +79,7 @@ decrypted = passphrase.decrypt(encrypted, "my extremely secure password")
 $ source env/bin/activate
 $ make develop
 ```
+
+## Licensing
+
+`pyrage` is released and distributed under the terms of the [MIT License](./LICENSE).
