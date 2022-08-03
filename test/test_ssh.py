@@ -1,6 +1,6 @@
 import unittest
 
-from pyrage import ssh
+from pyrage import ssh, RecipientError
 
 from .utils import ssh_keypair
 
@@ -21,5 +21,5 @@ class TestRecipient(unittest.TestCase):
             self.assertIsInstance(recipient, ssh.Recipient)
 
     def test_from_str_invalid(self):
-        with self.assertRaisesRegex(ValueError, "invalid SSH recipient"):
+        with self.assertRaisesRegex(RecipientError, "invalid SSH recipient"):
             ssh.Recipient.from_str("invalid ssh pubkey")

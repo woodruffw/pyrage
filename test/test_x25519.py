@@ -1,6 +1,6 @@
 import unittest
 
-from pyrage import x25519
+from pyrage import x25519, IdentityError, RecipientError
 
 
 class TestIdentity(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestIdentity(unittest.TestCase):
         self.assertIsInstance(parsed, x25519.Identity)
 
     def test_from_str_invalid(self):
-        with self.assertRaisesRegex(ValueError, "invalid Bech32 encoding"):
+        with self.assertRaisesRegex(IdentityError, "invalid Bech32 encoding"):
             x25519.Identity.from_str("BAD-PREFIX")
 
 
@@ -34,7 +34,7 @@ class TestRecipient(unittest.TestCase):
         )
 
     def test_from_str_invalid(self):
-        with self.assertRaisesRegex(ValueError, "invalid Bech32 encoding"):
+        with self.assertRaisesRegex(RecipientError, "invalid Bech32 encoding"):
             x25519.Recipient.from_str("badprefix")
 
 
