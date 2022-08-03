@@ -19,6 +19,11 @@ mod passphrase;
 mod ssh;
 mod x25519;
 
+// These exceptions are raised by the `pyrage.ssh` and `pyrage.x25519` APIs,
+// where appropriate.
+create_exception!(pyrage, RecipientError, PyException);
+create_exception!(pyrage, IdentityError, PyException);
+
 // This is a wrapper trait for age's `Recipient`, providing trait downcasting.
 //
 // We need this so that we can pass multiple different types of recipients
@@ -205,6 +210,9 @@ fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
         "import sys; sys.modules['pyrage.passphrase'] = passphrase"
     );
     m.add_submodule(passphrase)?;
+
+    m.add("IdentityError", py.get_type::<IdentityError>())?;
+    m.add("RecipientError", py.get_type::<RecipientError>())?;
 
     m.add("EncryptError", py.get_type::<EncryptError>())?;
     m.add_wrapped(wrap_pyfunction!(encrypt))?;

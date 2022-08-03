@@ -1,7 +1,9 @@
 use std::str::FromStr;
 
 use age::secrecy::ExposeSecret;
-use pyo3::{exceptions::PyValueError, prelude::*, types::PyType};
+use pyo3::{prelude::*, types::PyType};
+
+use crate::{IdentityError, RecipientError};
 
 #[pyclass(module = "pyrage.x25519")]
 #[derive(Clone)]
@@ -13,7 +15,7 @@ impl Recipient {
     fn from_str(_cls: &PyType, v: &str) -> PyResult<Self> {
         age::x25519::Recipient::from_str(v)
             .map(Self)
-            .map_err(PyValueError::new_err)
+            .map_err(RecipientError::new_err)
     }
 
     fn __str__(&self) -> String {
@@ -34,8 +36,8 @@ impl Identity {
 
     #[classmethod]
     fn from_str(_cls: &PyType, v: &str) -> PyResult<Self> {
-        let identity =
-            age::x25519::Identity::from_str(v).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        let identity = age::x25519::Identity::from_str(v)
+            .map_err(|e| IdentityError::new_err(e.to_string()))?;
 
         Ok(Self(identity))
     }
