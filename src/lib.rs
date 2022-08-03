@@ -137,7 +137,6 @@ fn encrypt<'p>(
     // is what the underlying `age` API expects.
     let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
 
-    // TODO: More specific exceptions here, rather than ValueError for everything.
     let encryptor = Encryptor::with_recipients(recipients);
     let mut encrypted = vec![];
     let mut writer = encryptor
