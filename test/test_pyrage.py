@@ -23,7 +23,7 @@ class TestPyrage(unittest.TestCase):
         encrypted = pyrage.encrypt(b"test", [alice.to_public()])
 
         # bob tries to decrypt and fails
-        with self.assertRaisesRegex(ValueError, "No matching keys found"):
+        with self.assertRaisesRegex(pyrage.DecryptError, "No matching keys found"):
             pyrage.decrypt(encrypted, [bob])
 
         # one key matches, so decryption succeeds

@@ -2,10 +2,14 @@
 
 use std::io::{Read, Write};
 
-use age::{DecryptError, EncryptError, Encryptor, Identity, Recipient};
+use age::{
+    DecryptError as RageDecryptError, EncryptError as RageEncryptError, Encryptor, Identity,
+    Recipient,
+};
 use age_core::format::{FileKey, Stanza};
 use pyo3::{
-    exceptions::{PyTypeError, PyValueError},
+    create_exception,
+    exceptions::{PyException, PyTypeError},
     prelude::*,
     py_run,
     types::PyBytes,
@@ -14,6 +18,11 @@ use pyo3::{
 mod passphrase;
 mod ssh;
 mod x25519;
+
+// These exceptions are raised by the `pyrage.ssh` and `pyrage.x25519` APIs,
+// where appropriate.
+create_exception!(pyrage, RecipientError, PyException);
+create_exception!(pyrage, IdentityError, PyException);
 
 // This is a wrapper trait for age's `Recipient`, providing trait downcasting.
 //
@@ -39,7 +48,7 @@ macro_rules! recipient_traits {
     ($($t:ty),+) => {
         $(
             impl Recipient for $t {
-                fn wrap_file_key(&self, file_key: &FileKey) -> Result<Vec<Stanza>, EncryptError> {
+                fn wrap_file_key(&self, file_key: &FileKey) -> Result<Vec<Stanza>, RageEncryptError> {
                     self.0.wrap_file_key(file_key)
                 }
             }
@@ -63,7 +72,7 @@ macro_rules! identity_traits {
     ($($t:ty),+) => {
         $(
             impl Identity for $t {
-                fn unwrap_stanza(&self, stanza: &Stanza) -> Option<Result<FileKey, DecryptError>> {
+                fn unwrap_stanza(&self, stanza: &Stanza) -> Option<Result<FileKey, RageDecryptError>> {
                     self.0.unwrap_stanza(stanza)
                 }
             }
@@ -116,6 +125,8 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageIdentity> {
     }
 }
 
+create_exception!(pyrage, EncryptError, PyException);
+
 #[pyfunction]
 fn encrypt<'p>(
     py: Python<'p>,
@@ -126,22 +137,23 @@ fn encrypt<'p>(
     // is what the underlying `age` API expects.
     let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
 
-    // TODO: More specific exceptions here, rather than ValueError for everything.
     let encryptor = Encryptor::with_recipients(recipients);
     let mut encrypted = vec![];
     let mut writer = encryptor
         .wrap_output(&mut encrypted)
-        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        .map_err(|e| EncryptError::new_err(e.to_string()))?;
     writer
         .write_all(plaintext)
-        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        .map_err(|e| EncryptError::new_err(e.to_string()))?;
     writer
         .finish()
-        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
     // TODO: Avoid this copy. Maybe PyBytes::new_with?
     Ok(PyBytes::new(py, &encrypted))
 }
+
+create_exception!(pyrage, DecryptError, PyException);
 
 #[pyfunction]
 fn decrypt<'p>(
@@ -152,10 +164,10 @@ fn decrypt<'p>(
     let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
 
     let decryptor =
-        match age::Decryptor::new(ciphertext).map_err(|e| PyValueError::new_err(e.to_string()))? {
+        match age::Decryptor::new(ciphertext).map_err(|e| DecryptError::new_err(e.to_string()))? {
             age::Decryptor::Recipients(d) => d,
             age::Decryptor::Passphrase(_) => {
-                return Err(PyValueError::new_err(
+                return Err(DecryptError::new_err(
                     "invalid ciphertext (encrypted with passphrase, not identities)",
                 ))
             }
@@ -164,10 +176,10 @@ fn decrypt<'p>(
     let mut decrypted = vec![];
     let mut reader = decryptor
         .decrypt(identities)
-        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        .map_err(|e| DecryptError::new_err(e.to_string()))?;
     reader
         .read_to_end(&mut decrypted)
-        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        .map_err(|e| DecryptError::new_err(e.to_string()))?;
 
     // TODO: Avoid this copy. Maybe PyBytes::new_with?
     Ok(PyBytes::new(py, &decrypted))
@@ -198,7 +210,12 @@ fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
     );
     m.add_submodule(passphrase)?;
 
+    m.add("IdentityError", py.get_type::<IdentityError>())?;
+    m.add("RecipientError", py.get_type::<RecipientError>())?;
+
+    m.add("EncryptError", py.get_type::<EncryptError>())?;
     m.add_wrapped(wrap_pyfunction!(encrypt))?;
+    m.add("DecryptError", py.get_type::<DecryptError>())?;
     m.add_wrapped(wrap_pyfunction!(decrypt))?;
 
     Ok(())
