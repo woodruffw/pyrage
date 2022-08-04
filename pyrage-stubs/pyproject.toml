@@ -17,7 +17,7 @@ classifiers = [
   "Typing :: Stubs Only",
 ]
 dependencies = [
-  "pyrage>=0.1.0,<1.0"
+  "pyrage>=1.0.0,<2.0"
 ]
 requires-python = ">= 3.7"
 
