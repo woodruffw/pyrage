@@ -18,7 +18,7 @@ jobs:
         run: make dist-pyrage
 
       - name: publish
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@main
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
@@ -26,7 +26,7 @@ jobs:
 
   release-macos:
     name: upload macOS releases to PyPI
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
 
@@ -39,7 +39,7 @@ jobs:
           maturin build --release --strip --universal2
 
       - name: publish
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@main
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
