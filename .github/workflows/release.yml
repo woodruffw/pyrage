@@ -18,7 +18,7 @@ jobs:
         run: make dist-pyrage
 
       - name: publish
-        uses: pypa/gh-action-pypi-publish@v1
+        uses: pypa/gh-action-pypi-publish@v1.5.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
@@ -39,7 +39,7 @@ jobs:
           maturin build --release --strip --universal2
 
       - name: publish
-        uses: pypa/gh-action-pypi-publish@v1
+        uses: pypa/gh-action-pypi-publish@v1.5.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
