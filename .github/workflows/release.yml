@@ -6,8 +6,8 @@ on:
 name: release
 
 jobs:
-  pypi:
-    name: upload release to PyPI
+  release-linux:
+    name: upload Linux releases to PyPI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -16,6 +16,27 @@ jobs:
 
       - name: build wheels
         run: make dist-pyrage
+
+      - name: publish
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+          packages_dir: target/wheels/
+
+  release-macos:
+    name: upload macOS releases to PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v1
+
+      - name: build wheels
+        run: |
+          make env
+          source env/bin/activate
+          maturin build --release --strip --universal2
 
       - name: publish
         uses: pypa/gh-action-pypi-publish@master
