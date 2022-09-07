@@ -22,7 +22,7 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
-          packages_dir: target/wheels/
+          packages_dir: dist/
 
   release-macos:
     name: upload macOS releases to PyPI
