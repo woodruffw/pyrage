@@ -29,4 +29,4 @@ crate-type = ["cdylib"]
 # age = { version = "0.8", features = ["ssh"] }
 age-core = { git = "https://github.com/str4d/rage", branch = "main" }
 age = { git = "https://github.com/str4d/rage", branch = "main", features = ["ssh"] }
-pyo3 = { version = "0.17", features = ["extension-module"] }
+pyo3 = { version = "0.17", features = ["extension-module", "abi3", "abi3-py37"] }
