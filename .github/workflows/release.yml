@@ -7,7 +7,7 @@ name: release
 
 jobs:
   release-linux:
-    name: upload Linux releases to PyPI
+    name: build Linux release dists
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -17,15 +17,14 @@ jobs:
       - name: build wheels
         run: make dist-pyrage
 
-      - name: publish
-        uses: pypa/gh-action-pypi-publish@v1.5.1
+      - name: upload linux dists
+        uses: actions/upload-artifact@v2
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
-          packages_dir: dist/
+          name: pyrage-dists
+          path: dist/
 
   release-macos:
-    name: upload macOS releases to PyPI
+    name: build macOS release dists
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -38,10 +37,30 @@ jobs:
           make env
           source env/bin/activate
           maturin build --release --strip --universal2
+          mv target/wheels/ dist/
+
+      - name: upload macos dists
+        uses: actions/upload-artifact@v2
+        with:
+          name: pyrage-dists
+          path: dist/
+
+  pypi-publish:
+    name: publish all dists to PyPI
+    runs-on: ubuntu-latest
+    needs:
+      - release-linux
+      - release-macos
+    steps:
+      - name: fetch dists
+        uses: actions/download-artifact@v2
+        with:
+          name: pyrage-dists
+          path: dist/
 
       - name: publish
         uses: pypa/gh-action-pypi-publish@v1.5.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
-          packages_dir: target/wheels/
+          packages_dir: dist/
