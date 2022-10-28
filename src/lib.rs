@@ -29,7 +29,7 @@ create_exception!(pyrage, IdentityError, PyException);
 // We need this so that we can pass multiple different types of recipients
 // into the Python-level `encrypt` API.
 trait PyrageRecipient: Recipient {
-    fn as_recipient(self: Box<Self>) -> Box<dyn Recipient>;
+    fn as_recipient(self: Box<Self>) -> Box<dyn Recipient + Send>;
 }
 
 // This is a wrapper trait for age's `Identity`, providing trait downcasting.
@@ -54,8 +54,8 @@ macro_rules! recipient_traits {
             }
 
             impl PyrageRecipient for $t {
-                fn as_recipient(self: Box<Self>) -> Box<dyn Recipient> {
-                    self as Box<dyn Recipient>
+                fn as_recipient(self: Box<Self>) -> Box<dyn Recipient + Send> {
+                    self as Box<dyn Recipient + Send>
                 }
             }
         )*
@@ -137,7 +137,8 @@ fn encrypt<'p>(
     // is what the underlying `age` API expects.
     let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
 
-    let encryptor = Encryptor::with_recipients(recipients);
+    let encryptor = Encryptor::with_recipients(recipients)
+        .ok_or_else(|| EncryptError::new_err("expected at least one recipient"))?;
     let mut encrypted = vec![];
     let mut writer = encryptor
         .wrap_output(&mut encrypted)

@@ -6,6 +6,12 @@ from .utils import ssh_keypair
 
 
 class TestPyrage(unittest.TestCase):
+    def test_encrypt_fails_with_no_receipients(self):
+        with self.assertRaisesRegex(
+            pyrage.EncryptError, "expected at least one recipient"
+        ):
+            pyrage.encrypt(b"test", [])
+
     def test_roundtrip(self):
         identity = pyrage.x25519.Identity.generate()
         recipient = identity.to_public()
