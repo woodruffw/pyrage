@@ -10,7 +10,6 @@ readme = "README.md"
 license = "MIT"
 
 [package.metadata.release]
-dev-version = false
 publish = false # handled by GitHub Actions
 push = true
 
