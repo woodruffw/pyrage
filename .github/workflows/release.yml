@@ -29,7 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
 
       - name: build wheels
         run: |
@@ -45,12 +47,37 @@ jobs:
           name: pyrage-dists
           path: dist/
 
+  release-windows:
+    name: build Windows release dists
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: build wheels
+        shell: bash
+        run: |
+          make env
+          source env/bin/activate
+          maturin build --release --strip
+          mv target/wheels/ dist/
+
+      - name: upload windows dists
+        uses: actions/upload-artifact@v2
+        with:
+          name: pyrage-dists
+          path: dist/
+
   pypi-publish:
     name: publish all dists to PyPI
     runs-on: ubuntu-latest
     needs:
       - release-linux
       - release-macos
+      - release-windows
     steps:
       - name: fetch dists
         uses: actions/download-artifact@v2
