@@ -1,4 +1,5 @@
 [project]
+name = "pyrage"
 classifiers = [
     "Programming Language :: Rust",
     "Operating System :: POSIX :: Linux",
