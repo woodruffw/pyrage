@@ -1,0 +1,6 @@
+[project]
+classifiers = [
+    "Programming Language :: Rust",
+    "Operating System :: POSIX :: Linux",
+]
+requires-python = ">=3.7"
