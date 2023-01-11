@@ -39,7 +39,9 @@ jobs:
         python-version: ${{ matrix.python }}
 
     - name: Build
+      shell: bash
       run: make develop
 
     - name: Test
+      shell: bash
       run: make test
