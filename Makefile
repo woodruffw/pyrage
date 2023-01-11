@@ -1,3 +1,11 @@
+VENV = env
+VENV_BIN = $(VENV)/bin
+
+ifeq ($(OS), Windows_NT)
+	VENV_BIN=$(VENV)/Scripts
+endif
+
+
 .PHONY: all
 all:
 	@echo "Run my targets individually!"
@@ -5,19 +13,19 @@ all:
 .PHONY: env
 env: env/pyvenv.cfg
 
-env/pyvenv.cfg: dev-requirements.txt
-	python -m venv env
-	./env/bin/python -m pip install --upgrade pip
-	./env/bin/python -m pip install --requirement dev-requirements.txt
+$(VENV)/pyvenv.cfg: dev-requirements.txt
+	python -m venv $(VENV)
+	$(VENV_BIN)/python -m pip install --upgrade pip
+	$(VENV_BIN)/python -m pip install --requirement dev-requirements.txt
 
 .PHONY: develop
 develop: env
-	. ./env/bin/activate && maturin develop --extras=dev
-	./env/bin/python -m pip install --editable ./pyrage-stubs
+	. $(VENV_BIN)/activate && maturin develop --extras=dev
+	$(VENV_BIN)/python -m pip install --editable ./pyrage-stubs
 
 .PHONY: test
 test: develop
-	./env/bin/python -m unittest
+	$(VENV_BIN)/python -m unittest
 
 .PHONY: dist
 dist: dist-pyrage dist-pyrage-stubs
@@ -28,4 +36,4 @@ dist-pyrage: env
 
 .PHONY: dist-pyrage-stubs
 dist-pyrage-stubs: env
-	./env/bin/python -m build ./pyrage-stubs --outdir dist
+	$(VENV_BIN)/python -m build ./pyrage-stubs --outdir dist
