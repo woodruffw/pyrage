@@ -1,6 +1,6 @@
 [package]
 name = "pyrage"
-version = "1.0.2-rc.2"
+version = "1.0.2"
 authors = ["William Woodruff <william@yossarian.net>"]
 edition = "2021"
 description = "Python bindings for rage (age in Rust)"
