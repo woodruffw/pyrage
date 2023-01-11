@@ -24,6 +24,7 @@ jobs:
         platform:
           - macos-latest
           - ubuntu-latest
+          - windows-latest
         python:
           - "3.7"
           - "3.8"
