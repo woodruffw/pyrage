@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           make env
-          source env/bin/activate
+          source env/Scripts/activate
           maturin build --release --strip
           mv target/wheels/ dist/
 
