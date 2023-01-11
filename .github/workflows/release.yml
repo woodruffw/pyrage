@@ -18,7 +18,7 @@ jobs:
         run: make dist-pyrage
 
       - name: upload linux dists
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: pyrage-dists
           path: dist/
@@ -42,7 +42,7 @@ jobs:
           mv target/wheels/ dist/
 
       - name: upload macos dists
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: pyrage-dists
           path: dist/
@@ -66,7 +66,7 @@ jobs:
           mv target/wheels/ dist/
 
       - name: upload windows dists
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: pyrage-dists
           path: dist/
