@@ -75,6 +75,13 @@ jobs:
     name: publish all dists to PyPI
     runs-on: ubuntu-latest
     environment: release
+    permissions:
+      # Used for OIDC publishing.
+      # Used to sign the release's artifacts with sigstore-python.
+      id-token: write
+
+      # Used to attach signing artifacts to the published release.
+      contents: write
     needs:
       - release-linux
       - release-macos
@@ -91,3 +98,10 @@ jobs:
         uses: pypa/gh-action-pypi-publish@v1.8.1
         with:
           packages_dir: dist/
+
+      - name: sign
+        uses: sigstore/gh-action-sigstore-python@v1.2.1
+        with:
+          inputs: ./dist/*.tar.gz ./dist/*.whl
+          release-signing-artifacts: true
+          bundle-only: true
