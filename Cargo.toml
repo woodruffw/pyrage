@@ -19,4 +19,4 @@ crate-type = ["cdylib"]
 [dependencies]
 age-core = "0.9"
 age = { version = "0.9", features = ["ssh"] }
-pyo3 = { version = "0.17", features = ["extension-module", "abi3", "abi3-py37"] }
+pyo3 = { version = "0.18", features = ["extension-module", "abi3", "abi3-py37"] }
