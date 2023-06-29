@@ -1,6 +1,9 @@
 #![forbid(unsafe_code)]
 
-use std::io::{Read, Write};
+use std::{
+    fs::File,
+    io::{Read, Write},
+};
 
 use age::{
     DecryptError as RageDecryptError, EncryptError as RageEncryptError, Encryptor, Identity,
@@ -12,7 +15,7 @@ use pyo3::{
     exceptions::{PyException, PyTypeError},
     prelude::*,
     py_run,
-    types::PyBytes,
+    types::{PyBytes, PyString},
 };
 
 mod passphrase;
@@ -154,6 +157,37 @@ fn encrypt<'p>(
     Ok(PyBytes::new(py, &encrypted))
 }
 
+#[pyfunction]
+fn encrypt_file(
+    infile: &PyString,
+    outfile: &PyString,
+    recipients: Vec<Box<dyn PyrageRecipient>>,
+) -> PyResult<()> {
+    // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
+    // is what the underlying `age` API expects.
+    let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
+
+    let reader = File::open(infile.to_str()?)?;
+    let writer = File::create(outfile.to_str()?)?;
+
+    let mut reader = std::io::BufReader::new(reader);
+    let mut writer = std::io::BufWriter::new(writer);
+
+    let encryptor = Encryptor::with_recipients(recipients)
+        .ok_or_else(|| EncryptError::new_err("expected at least one recipient"))?;
+    let mut writer = encryptor
+        .wrap_output(&mut writer)
+        .map_err(|e| EncryptError::new_err(e.to_string()))?;
+
+    std::io::copy(&mut reader, &mut writer).map_err(|e| EncryptError::new_err(e.to_string()))?;
+
+    writer
+        .finish()
+        .map_err(|e| EncryptError::new_err(e.to_string()))?;
+
+    Ok(())
+}
+
 create_exception!(pyrage, DecryptError, PyException);
 
 #[pyfunction]
@@ -186,6 +220,40 @@ fn decrypt<'p>(
     Ok(PyBytes::new(py, &decrypted))
 }
 
+#[pyfunction]
+fn decrypt_file(
+    infile: &PyString,
+    outfile: &PyString,
+    identities: Vec<Box<dyn PyrageIdentity>>,
+) -> PyResult<()> {
+    let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
+
+    let reader = File::open(infile.to_str()?)?;
+    let writer = File::create(outfile.to_str()?)?;
+
+    let reader = std::io::BufReader::new(reader);
+    let mut writer = std::io::BufWriter::new(writer);
+
+    let decryptor = match age::Decryptor::new_buffered(reader)
+        .map_err(|e| DecryptError::new_err(e.to_string()))?
+    {
+        age::Decryptor::Recipients(d) => d,
+        age::Decryptor::Passphrase(_) => {
+            return Err(DecryptError::new_err(
+                "invalid ciphertext (encrypted with passphrase, not identities)",
+            ))
+        }
+    };
+
+    let mut reader = decryptor
+        .decrypt(identities)
+        .map_err(|e| DecryptError::new_err(e.to_string()))?;
+
+    std::io::copy(&mut reader, &mut writer)?;
+
+    Ok(())
+}
+
 #[pymodule]
 fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
     // HACK(ww): pyO3 modules are not packages, so we need this nasty
@@ -216,8 +284,10 @@ fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
 
     m.add("EncryptError", py.get_type::<EncryptError>())?;
     m.add_wrapped(wrap_pyfunction!(encrypt))?;
+    m.add_wrapped(wrap_pyfunction!(encrypt_file))?;
     m.add("DecryptError", py.get_type::<DecryptError>())?;
     m.add_wrapped(wrap_pyfunction!(decrypt))?;
+    m.add_wrapped(wrap_pyfunction!(decrypt_file))?;
 
     Ok(())
 }
