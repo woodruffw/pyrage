@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 
 import pyrage
@@ -20,6 +22,25 @@ class TestPyrage(unittest.TestCase):
         decrypted = pyrage.decrypt(encrypted, [identity])
 
         self.assertEqual(b"test", decrypted)
+
+    def test_roundtrip_file(self):
+        identity = pyrage.x25519.Identity.generate()
+        recipient = identity.to_public()
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            unencrypted = os.path.join(tempdir, "unencrypted")
+            encrypted = os.path.join(tempdir, "encrypted")
+            decrypted = os.path.join(tempdir, "decrypted")
+
+            with open(unencrypted, "wb") as file:
+                file.write(b"test")
+
+            pyrage.encrypt_file(unencrypted, encrypted, [recipient])
+            pyrage.decrypt_file(encrypted, decrypted, [identity])
+
+            with open(unencrypted, "rb") as file1:
+                with open(decrypted, "rb") as file2:
+                    self.assertEqual(file1.read(), file2.read())
 
     def test_decrypt_fails_wrong_recipient(self):
         alice = pyrage.x25519.Identity.generate()
