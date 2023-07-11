@@ -2,6 +2,7 @@ pyrage
 ======
 
 [![CI](https://github.com/woodruffw/pyrage/actions/workflows/ci.yml/badge.svg)](https://github.com/woodruffw/pyrage/actions/workflows/ci.yml)
+[![PyPI version](https://badge.fury.io/py/pyrage.svg)](https://badge.fury.io/py/pyrage)
 
 Python bindings for the [Rust implementation of `age`](https://github.com/str4d/rage).
 
