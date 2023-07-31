@@ -6,6 +6,10 @@ class Identity:
     def generate(cls) -> Identity:
         ...
 
+    @classmethod
+    def from_str(cls) -> Identity:
+        ...
+
     def to_public(self) -> Recipient:
         ...
 
