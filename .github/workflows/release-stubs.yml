@@ -1,0 +1,47 @@
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        required: true
+        default: false
+        type: boolean
+name: release-stubs
+
+jobs:
+  release-stubs:
+    name: build pyrage-stubs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: build pyrage-stubs
+        run: |
+          make dist-pyrage-stubs
+
+      - name: upload dists
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+  pypi-publish:
+    name: publish all dists to PyPI
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      # Used for OIDC publishing.
+      id-token: write
+
+    steps:
+      - name: fetch dists
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+      - name: publish
+        if: !inputs.dry-run
+        uses: pypa/gh-action-pypi-publish@v1.8.8
