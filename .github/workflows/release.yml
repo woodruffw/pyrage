@@ -14,7 +14,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version-file: pyproject.toml
 
       - name: build wheels
         run: make dist-pyrage
@@ -33,7 +33,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version-file: pyproject.toml
 
       - name: build wheels
         run: |
@@ -57,7 +57,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version-file: pyproject.toml
 
       - name: build wheels
         shell: bash
