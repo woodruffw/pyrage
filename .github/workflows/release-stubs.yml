@@ -36,6 +36,8 @@ jobs:
     permissions:
       # Used for OIDC publishing.
       id-token: write
+    needs:
+      - release-stubs
 
     steps:
       - name: fetch dists
