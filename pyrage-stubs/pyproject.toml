@@ -17,7 +17,7 @@ classifiers = [
   "Typing :: Stubs Only",
 ]
 dependencies = ["pyrage>=1.0.0,<2.0"]
-requires-python = ">= 3.7"
+requires-python = ">= 3.8"
 
 [project.urls]
 Homepage = "https://pypi.org/project/pyrage/"
