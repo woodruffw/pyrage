@@ -26,7 +26,6 @@ jobs:
           - ubuntu-latest
           - windows-latest
         python:
-          - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
@@ -46,3 +45,17 @@ jobs:
     - name: Test
       shell: bash
       run: make test
+
+  all-tests-pass:
+    if: always()
+
+    needs:
+    - test
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: check test jobs
+        uses: re-actors/alls-green@v1.2.2
+        with:
+          jobs: ${{ toJSON(needs) }}
