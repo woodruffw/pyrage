@@ -32,7 +32,7 @@ dist: dist-pyrage dist-pyrage-stubs
 
 .PHONY: dist-pyrage
 dist-pyrage: env
-	docker run --rm -v $(shell pwd):/io ghcr.io/pyo3/maturin build --release --strip --out dist
+	docker run --rm -v $(shell pwd):/io ghcr.io/pyo3/maturin build --release --sdist --strip --out dist
 
 .PHONY: dist-pyrage-stubs
 dist-pyrage-stubs: env
