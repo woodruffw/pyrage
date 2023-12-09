@@ -10,7 +10,6 @@ readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "William Woodruff", email = "william@yossarian.net" }]
 classifiers = [
-  "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Topic :: Security :: Cryptography",
