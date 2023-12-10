@@ -104,4 +104,3 @@ jobs:
         with:
           inputs: ./dist/*.tar.gz ./dist/*.whl
           release-signing-artifacts: true
-          bundle-only: true
