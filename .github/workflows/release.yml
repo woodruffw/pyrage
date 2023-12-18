@@ -91,7 +91,7 @@ jobs:
 
     steps:
       - name: fetch dists
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pyrage-dists
           path: dist/
