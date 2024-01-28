@@ -1,5 +1,4 @@
 /target
-Cargo.lock
 /env
 __pycache__
 *.pyc
