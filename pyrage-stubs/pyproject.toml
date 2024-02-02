@@ -22,3 +22,12 @@ requires-python = ">= 3.8"
 Homepage = "https://pypi.org/project/pyrage/"
 Issues = "https://github.com/woodruffw/pyrage/issues"
 Source = "https://github.com/woodruffw/pyrage/tree/main/pyrage-stubs"
+
+[tool.setuptools]
+# ...
+# By default, include-package-data is true in pyproject.toml, so you do
+# NOT have to specify this line.
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["*.pyi"]

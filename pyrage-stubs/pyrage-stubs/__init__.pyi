@@ -1,0 +1,19 @@
+from typing import Sequence, Union
+
+from pyrage import ssh, x25519, plugin, passphrase
+
+Identity = Union[ssh.Identity, x25519.Identity, plugin.IdentityPluginV1]
+Recipient = Union[ssh.Recipient, x25519.Recipient, plugin.RecipientPluginV1]
+
+
+class RecipientError(Exception):
+    ...
+
+class IdentityError(Exception):
+    ...
+
+
+def encrypt(plaintext: bytes, recipients: Sequence[Recipient]) -> bytes: ...
+def encrypt_file(infile: str, outfile: str, recipients: Sequence[Recipient]) -> None: ...
+def decrypt(ciphertext: bytes, identities: Sequence[Identity]) -> bytes: ...
+def decrypt_file(infile: str, outfile: str, identities: Sequence[Identity]) -> None: ...
