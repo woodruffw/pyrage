@@ -1,6 +1,6 @@
 from typing import Sequence, Union
 
-from pyrage import ssh, x25519
+from pyrage import ssh, x25519, passphrase
 
 Identity = Union[ssh.Identity, x25519.Identity]
 Recipient = Union[ssh.Recipient, x25519.Recipient]
