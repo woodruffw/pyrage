@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Sequence, Self, Optional, Protocol
+from pyrage import RecipientError, IdentityError
 
 
 class Callbacks(Protocol):
