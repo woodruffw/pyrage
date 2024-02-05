@@ -17,8 +17,8 @@ push = true
 crate-type = ["cdylib"]
 
 [dependencies]
-age-core = "0.9"
-age = { version = "0.9", features = ["ssh"] }
+age-core = "0.10"
+age = { version = "0.10", features = ["ssh"] }
 pyo3 = { version = "0.20", features = [
     "extension-module",
     "abi3",
