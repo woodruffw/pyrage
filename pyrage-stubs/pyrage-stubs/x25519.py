@@ -16,5 +16,5 @@ class Identity:
 
 class Recipient:
     @classmethod
-    def from_str(cls) -> Recipient:
+    def from_str(cls, v: str) -> Recipient:
         ...
