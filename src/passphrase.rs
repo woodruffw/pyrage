@@ -6,7 +6,7 @@ use pyo3::{prelude::*, types::PyBytes};
 use crate::{DecryptError, EncryptError};
 
 #[pyfunction]
-fn encrypt<'p>(py: Python<'p>, plaintext: &[u8], passphrase: &str) -> PyResult<&'p PyBytes> {
+fn encrypt<'p>(py: Python<'p>, plaintext: &[u8], passphrase: &str) -> PyResult<Bound<'p, PyBytes>> {
     let encryptor = Encryptor::with_user_passphrase(Secret::new(passphrase.into()));
     let mut encrypted = vec![];
     let mut writer = encryptor
@@ -19,11 +19,15 @@ fn encrypt<'p>(py: Python<'p>, plaintext: &[u8], passphrase: &str) -> PyResult<&
         .finish()
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
-    Ok(PyBytes::new(py, &encrypted))
+    Ok(PyBytes::new_bound(py, &encrypted))
 }
 
 #[pyfunction]
-fn decrypt<'p>(py: Python<'p>, ciphertext: &[u8], passphrase: &str) -> PyResult<&'p PyBytes> {
+fn decrypt<'p>(
+    py: Python<'p>,
+    ciphertext: &[u8],
+    passphrase: &str,
+) -> PyResult<Bound<'p, PyBytes>> {
     let decryptor =
         match Decryptor::new(ciphertext).map_err(|e| DecryptError::new_err(e.to_string()))? {
             Decryptor::Passphrase(d) => d,
@@ -41,11 +45,11 @@ fn decrypt<'p>(py: Python<'p>, ciphertext: &[u8], passphrase: &str) -> PyResult<
         .read_to_end(&mut decrypted)
         .map_err(|e| DecryptError::new_err(e.to_string()))?;
 
-    Ok(PyBytes::new(py, &decrypted))
+    Ok(PyBytes::new_bound(py, &decrypted))
 }
 
-pub(crate) fn module(py: Python) -> PyResult<&PyModule> {
-    let module = PyModule::new(py, "passphrase")?;
+pub(crate) fn module(py: Python) -> PyResult<Bound<'_, PyModule>> {
+    let module = PyModule::new_bound(py, "passphrase")?;
 
     module.add_wrapped(wrap_pyfunction!(encrypt))?;
     module.add_wrapped(wrap_pyfunction!(decrypt))?;
