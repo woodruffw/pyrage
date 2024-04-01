@@ -12,7 +12,7 @@ pub(crate) struct Recipient(pub(crate) age::x25519::Recipient);
 #[pymethods]
 impl Recipient {
     #[classmethod]
-    fn from_str(_cls: &PyType, v: &str) -> PyResult<Self> {
+    fn from_str(_cls: &Bound<'_, PyType>, v: &str) -> PyResult<Self> {
         age::x25519::Recipient::from_str(v)
             .map(Self)
             .map_err(RecipientError::new_err)
@@ -30,12 +30,12 @@ pub(crate) struct Identity(pub(crate) age::x25519::Identity);
 #[pymethods]
 impl Identity {
     #[classmethod]
-    fn generate(_cls: &PyType) -> Self {
+    fn generate(_cls: &Bound<'_, PyType>) -> Self {
         Self(age::x25519::Identity::generate())
     }
 
     #[classmethod]
-    fn from_str(_cls: &PyType, v: &str) -> PyResult<Self> {
+    fn from_str(_cls: &Bound<'_, PyType>, v: &str) -> PyResult<Self> {
         let identity = age::x25519::Identity::from_str(v)
             .map_err(|e| IdentityError::new_err(e.to_string()))?;
 
@@ -51,8 +51,8 @@ impl Identity {
     }
 }
 
-pub(crate) fn module(py: Python) -> PyResult<&PyModule> {
-    let module = PyModule::new(py, "x25519")?;
+pub(crate) fn module(py: Python) -> PyResult<Bound<'_, PyModule>> {
+    let module = PyModule::new_bound(py, "x25519")?;
 
     module.add_class::<Recipient>()?;
     module.add_class::<Identity>()?;

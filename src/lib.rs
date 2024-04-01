@@ -15,7 +15,7 @@ use pyo3::{
     exceptions::{PyException, PyTypeError},
     prelude::*,
     py_run,
-    types::{PyBytes, PyString},
+    types::PyBytes,
 };
 
 mod passphrase;
@@ -135,7 +135,7 @@ fn encrypt<'p>(
     py: Python<'p>,
     plaintext: &[u8],
     recipients: Vec<Box<dyn PyrageRecipient>>,
-) -> PyResult<&'p PyBytes> {
+) -> PyResult<Bound<'p, PyBytes>> {
     // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
     // is what the underlying `age` API expects.
     let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
@@ -154,21 +154,21 @@ fn encrypt<'p>(
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
     // TODO: Avoid this copy. Maybe PyBytes::new_with?
-    Ok(PyBytes::new(py, &encrypted))
+    Ok(PyBytes::new_bound(py, &encrypted))
 }
 
 #[pyfunction]
 fn encrypt_file(
-    infile: &PyString,
-    outfile: &PyString,
+    infile: String,
+    outfile: String,
     recipients: Vec<Box<dyn PyrageRecipient>>,
 ) -> PyResult<()> {
     // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
     // is what the underlying `age` API expects.
     let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
 
-    let reader = File::open(infile.to_str()?)?;
-    let writer = File::create(outfile.to_str()?)?;
+    let reader = File::open(infile)?;
+    let writer = File::create(outfile)?;
 
     let mut reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
@@ -195,7 +195,7 @@ fn decrypt<'p>(
     py: Python<'p>,
     ciphertext: &[u8],
     identities: Vec<Box<dyn PyrageIdentity>>,
-) -> PyResult<&'p PyBytes> {
+) -> PyResult<Bound<'p, PyBytes>> {
     let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
 
     let decryptor =
@@ -217,19 +217,19 @@ fn decrypt<'p>(
         .map_err(|e| DecryptError::new_err(e.to_string()))?;
 
     // TODO: Avoid this copy. Maybe PyBytes::new_with?
-    Ok(PyBytes::new(py, &decrypted))
+    Ok(PyBytes::new_bound(py, &decrypted))
 }
 
 #[pyfunction]
 fn decrypt_file(
-    infile: &PyString,
-    outfile: &PyString,
+    infile: String,
+    outfile: String,
     identities: Vec<Box<dyn PyrageIdentity>>,
 ) -> PyResult<()> {
     let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
 
-    let reader = File::open(infile.to_str()?)?;
-    let writer = File::create(outfile.to_str()?)?;
+    let reader = File::open(infile)?;
+    let writer = File::create(outfile)?;
 
     let reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
@@ -255,7 +255,7 @@ fn decrypt_file(
 }
 
 #[pymodule]
-fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
+fn pyrage(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // HACK(ww): pyO3 modules are not packages, so we need this nasty
     // `py_run!` hack to support `from pyrage import ...` and similar
     // import patterns.
@@ -265,11 +265,11 @@ fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
         x25519,
         "import sys; sys.modules['pyrage.x25519'] = x25519"
     );
-    m.add_submodule(x25519)?;
+    m.add_submodule(&x25519)?;
 
     let ssh = ssh::module(py)?;
     py_run!(py, ssh, "import sys; sys.modules['pyrage.ssh'] = ssh");
-    m.add_submodule(ssh)?;
+    m.add_submodule(&ssh)?;
 
     let passphrase = passphrase::module(py)?;
     py_run!(
@@ -277,15 +277,15 @@ fn pyrage(py: Python, m: &PyModule) -> PyResult<()> {
         passphrase,
         "import sys; sys.modules['pyrage.passphrase'] = passphrase"
     );
-    m.add_submodule(passphrase)?;
+    m.add_submodule(&passphrase)?;
 
-    m.add("IdentityError", py.get_type::<IdentityError>())?;
-    m.add("RecipientError", py.get_type::<RecipientError>())?;
+    m.add("IdentityError", py.get_type_bound::<IdentityError>())?;
+    m.add("RecipientError", py.get_type_bound::<RecipientError>())?;
 
-    m.add("EncryptError", py.get_type::<EncryptError>())?;
+    m.add("EncryptError", py.get_type_bound::<EncryptError>())?;
     m.add_wrapped(wrap_pyfunction!(encrypt))?;
     m.add_wrapped(wrap_pyfunction!(encrypt_file))?;
-    m.add("DecryptError", py.get_type::<DecryptError>())?;
+    m.add("DecryptError", py.get_type_bound::<DecryptError>())?;
     m.add_wrapped(wrap_pyfunction!(decrypt))?;
     m.add_wrapped(wrap_pyfunction!(decrypt_file))?;
 

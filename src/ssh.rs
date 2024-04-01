@@ -11,7 +11,7 @@ pub(crate) struct Recipient(pub(crate) age::ssh::Recipient);
 #[pymethods]
 impl Recipient {
     #[classmethod]
-    fn from_str(_cls: &PyType, v: &str) -> PyResult<Self> {
+    fn from_str(_cls: &Bound<'_, PyType>, v: &str) -> PyResult<Self> {
         let recipient = age::ssh::Recipient::from_str(v)
             .map_err(|e| RecipientError::new_err(format!("invalid public key: {:?}", e)))?;
 
@@ -26,7 +26,7 @@ pub(crate) struct Identity(pub(crate) age::ssh::Identity);
 #[pymethods]
 impl Identity {
     #[classmethod]
-    fn from_buffer(_cls: &PyType, buf: &[u8]) -> PyResult<Self> {
+    fn from_buffer(_cls: &Bound<'_, PyType>, buf: &[u8]) -> PyResult<Self> {
         let identity = age::ssh::Identity::from_buffer(buf, None)
             .map_err(|e| IdentityError::new_err(e.to_string()))?;
 
@@ -43,8 +43,8 @@ impl Identity {
     }
 }
 
-pub(crate) fn module(py: Python) -> PyResult<&PyModule> {
-    let module = PyModule::new(py, "ssh")?;
+pub(crate) fn module(py: Python) -> PyResult<Bound<'_, PyModule>> {
+    let module = PyModule::new_bound(py, "ssh")?;
 
     module.add_class::<Recipient>()?;
     module.add_class::<Identity>()?;
