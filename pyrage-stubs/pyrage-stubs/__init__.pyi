@@ -1,9 +1,9 @@
 from typing import Sequence, Union
 
-from pyrage import ssh, x25519, passphrase
+from pyrage import ssh, x25519, passphrase, plugin
 
-Identity = Union[ssh.Identity, x25519.Identity]
-Recipient = Union[ssh.Recipient, x25519.Recipient]
+Identity = Union[ssh.Identity, x25519.Identity, plugin.IdentityPluginV1]
+Recipient = Union[ssh.Recipient, x25519.Recipient, plugin.RecipientPluginV1]
 
 
 class RecipientError(Exception):

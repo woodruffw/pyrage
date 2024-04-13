@@ -19,6 +19,7 @@ use pyo3::{
 };
 
 mod passphrase;
+mod plugin;
 mod ssh;
 mod x25519;
 
@@ -65,7 +66,7 @@ macro_rules! recipient_traits {
     }
 }
 
-recipient_traits!(ssh::Recipient, x25519::Recipient);
+recipient_traits!(ssh::Recipient, x25519::Recipient, plugin::RecipientPluginV1);
 
 // This macro generates two trait impls for each passed in type:
 //
@@ -89,7 +90,7 @@ macro_rules! identity_traits {
     }
 }
 
-identity_traits!(ssh::Identity, x25519::Identity);
+identity_traits!(ssh::Identity, x25519::Identity, plugin::IdentityPluginV1);
 
 // This is where the magic happens, and why we need to do the trait dance
 // above: `FromPyObject` is a third-party trait, so we need to implement it
@@ -103,6 +104,8 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
         if let Ok(recipient) = ob.extract::<x25519::Recipient>() {
             Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
         } else if let Ok(recipient) = ob.extract::<ssh::Recipient>() {
+            Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
+        } else if let Ok(recipient) = ob.extract::<plugin::RecipientPluginV1>() {
             Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
         } else {
             Err(PyTypeError::new_err(
@@ -119,6 +122,8 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageIdentity> {
         if let Ok(identity) = ob.extract::<x25519::Identity>() {
             Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
         } else if let Ok(identity) = ob.extract::<ssh::Identity>() {
+            Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
+        } else if let Ok(identity) = ob.extract::<plugin::IdentityPluginV1>() {
             Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
         } else {
             Err(PyTypeError::new_err(
@@ -278,6 +283,14 @@ fn pyrage(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
         "import sys; sys.modules['pyrage.passphrase'] = passphrase"
     );
     m.add_submodule(&passphrase)?;
+
+    let plugin = plugin::module(py)?;
+    py_run!(
+        py,
+        plugin,
+        "import sys; sys.modules['pyrage.plugin'] = plugin"
+    );
+    m.add_submodule(&plugin)?;
 
     m.add("IdentityError", py.get_type_bound::<IdentityError>())?;
     m.add("RecipientError", py.get_type_bound::<RecipientError>())?;
