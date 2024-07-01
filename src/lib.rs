@@ -100,7 +100,7 @@ identity_traits!(ssh::Identity, x25519::Identity, plugin::IdentityPluginV1);
 // `PyAny` into each concrete recipient type, which we then perform the trait
 // cast on.
 impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(recipient) = ob.extract::<x25519::Recipient>() {
             Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
         } else if let Ok(recipient) = ob.extract::<ssh::Recipient>() {
@@ -118,7 +118,7 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
 // Similar to the above: we try to turn the `PyAny` into a concrete identity type,
 // which we then perform the trait cast on.
 impl<'source> FromPyObject<'source> for Box<dyn PyrageIdentity> {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(identity) = ob.extract::<x25519::Identity>() {
             Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
         } else if let Ok(identity) = ob.extract::<ssh::Identity>() {
