@@ -260,14 +260,13 @@ fn decrypt_file(
     Ok(())
 }
 
-fn from_pyobject(py: Python, file: PyObject, read_only: bool) -> PyResult<PyFileLikeObject> {
+fn from_pyobject(file: PyObject, read_only: bool) -> PyResult<PyFileLikeObject> {
     // is a file-like
-    return PyFileLikeObject::with_requirements(file, read_only, !read_only, false, false);
+    PyFileLikeObject::with_requirements(file, read_only, !read_only, false, false)
 }
 
 #[pyfunction]
 fn encrypt_io(
-    py: Python,
     reader: PyObject,
     writer: PyObject,
     recipients: Vec<Box<dyn PyrageRecipient>>,
@@ -275,8 +274,8 @@ fn encrypt_io(
     // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
     // is what the underlying `age` API expects.
     let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
-    let reader = from_pyobject(py, reader, true)?;
-    let writer = from_pyobject(py, writer, false)?;
+    let reader = from_pyobject(reader, true)?;
+    let writer = from_pyobject(writer, false)?;
     let mut reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
     let encryptor = Encryptor::with_recipients(recipients)
@@ -293,14 +292,13 @@ fn encrypt_io(
 
 #[pyfunction]
 fn decrypt_io(
-    py: Python,
     reader: PyObject,
     writer: PyObject,
     identities: Vec<Box<dyn PyrageIdentity>>,
 ) -> PyResult<()> {
     let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
-    let reader = from_pyobject(py, reader, true)?;
-    let writer = from_pyobject(py, writer, false)?;
+    let reader = from_pyobject(reader, true)?;
+    let writer = from_pyobject(writer, false)?;
     let reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
     let decryptor = match age::Decryptor::new_buffered(reader)
