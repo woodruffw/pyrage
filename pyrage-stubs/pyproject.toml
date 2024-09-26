@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyrage-stubs"
-version = "1.1.1"
+version = "1.2.0"
 description = "A PEP 561 stub package for pyrage's types"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -15,7 +15,7 @@ classifiers = [
   "Topic :: Security :: Cryptography",
   "Typing :: Stubs Only",
 ]
-dependencies = ["pyrage>=1.0.0,<2.0"]
+dependencies = ["pyrage>=1.2.0,<2.0"]
 requires-python = ">= 3.8"
 
 [project.urls]
