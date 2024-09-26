@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from io import BytesIO
 
 import pyrage
 
@@ -22,6 +23,59 @@ class TestPyrage(unittest.TestCase):
         decrypted = pyrage.decrypt(encrypted, [identity])
 
         self.assertEqual(b"test", decrypted)
+
+    def test_roundtrip_io_fh(self):
+        identity = pyrage.x25519.Identity.generate()
+        recipient = identity.to_public()
+        with tempfile.TemporaryFile() as unencrypted:
+            unencrypted.write(b"test")
+            unencrypted.seek(0)
+            with tempfile.TemporaryFile() as encrypted:
+                pyrage.encrypt_io(unencrypted, encrypted, [recipient])
+                encrypted.seek(0)
+                with tempfile.TemporaryFile() as decrypted:
+                    pyrage.decrypt_io(encrypted, decrypted, [identity])
+                    decrypted.seek(0)
+                    unencrypted.seek(0)
+                    self.assertEqual(unencrypted.read(), decrypted.read())
+
+    def test_roundtrip_io_bytesio(self):
+        identity = pyrage.x25519.Identity.generate()
+        recipient = identity.to_public()
+        unencrypted = BytesIO(b'test')
+        encrypted = BytesIO()
+        decrypted = BytesIO()
+        pyrage.encrypt_io(unencrypted, encrypted, [recipient])
+        encrypted.seek(0)
+        pyrage.decrypt_io(encrypted, decrypted, [identity])
+        decrypted.seek(0)
+        unencrypted.seek(0)
+        self.assertEqual(unencrypted.read(), decrypted.read())
+
+    def test_roundtrip_io_fail(self):
+        identity = pyrage.x25519.Identity.generate()
+        recipient = identity.to_public()
+
+        with self.assertRaises(TypeError):
+            input = 'test'
+            output = BytesIO()
+            pyrage.encrypt_io(input, output, [recipient])
+
+        with self.assertRaises(TypeError):
+            input = BytesIO()
+            output = 'test'
+            pyrage.encrypt_io(input, output, [recipient])
+
+        with self.assertRaises(TypeError):
+            input = 'test'
+            output = BytesIO()
+            pyrage.decrypt_io(input, output, [recipient])
+
+        with self.assertRaises(TypeError):
+            input = BytesIO()
+            output = 'test'
+            pyrage.decrypt_io(input, output, [recipient])
+
 
     def test_roundtrip_file(self):
         identity = pyrage.x25519.Identity.generate()
