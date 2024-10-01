@@ -49,3 +49,5 @@ jobs:
       - name: publish
         if: ${{ !inputs.dry-run }}
         uses: pypa/gh-action-pypi-publish@v1.10.2
+        with:
+          attestations: true
