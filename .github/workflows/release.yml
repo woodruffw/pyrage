@@ -98,7 +98,7 @@ jobs:
           merge-multiple: true
 
       - name: publish
-        uses: pypa/gh-action-pypi-publish@v1.11.0
+        uses: pypa/gh-action-pypi-publish@v1.12.2
 
       - name: sign
         uses: sigstore/gh-action-sigstore-python@v3.0.0
