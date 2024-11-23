@@ -65,7 +65,7 @@ impl age::Callbacks for PyCallbacks {
                 .extract::<Option<String>>(py)
         })
         .expect("type error in `request_passphrase` callback")
-        .map(age::secrecy::SecretString::new)
+        .map(age::secrecy::SecretString::from)
     }
 }
 

@@ -1,9 +1,8 @@
 #![deny(unsafe_code)]
 
-use std::{
-    fs::File,
-    io::{Read, Write},
-};
+use std::collections::HashSet;
+use std::io::Write;
+use std::{fs::File, io::Read};
 
 use age::{
     DecryptError as RageDecryptError, EncryptError as RageEncryptError, Encryptor, Identity,
@@ -34,7 +33,7 @@ create_exception!(pyrage, IdentityError, PyException);
 // We need this so that we can pass multiple different types of recipients
 // into the Python-level `encrypt` API.
 trait PyrageRecipient: Recipient {
-    fn as_recipient(self: Box<Self>) -> Box<dyn Recipient + Send>;
+    fn as_recipient(self: Box<Self>) -> Box<dyn Recipient>;
 }
 
 // This is a wrapper trait for age's `Identity`, providing trait downcasting.
@@ -53,13 +52,13 @@ macro_rules! recipient_traits {
     ($($t:ty),+) => {
         $(
             impl Recipient for $t {
-                fn wrap_file_key(&self, file_key: &FileKey) -> Result<Vec<Stanza>, RageEncryptError> {
+                fn wrap_file_key(&self, file_key: &FileKey) -> Result<(Vec<Stanza>, HashSet<String>), RageEncryptError> {
                     self.0.wrap_file_key(file_key)
                 }
             }
 
             impl PyrageRecipient for $t {
-                fn as_recipient(self: Box<Self>) -> Box<dyn Recipient + Send> {
+                fn as_recipient(self: Box<Self>) -> Box<dyn Recipient> {
                     self as Box<dyn Recipient + Send>
                 }
             }
@@ -144,10 +143,13 @@ fn encrypt<'p>(
 ) -> PyResult<Bound<'p, PyBytes>> {
     // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
     // is what the underlying `age` API expects.
-    let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
+    let recipients = recipients
+        .into_iter()
+        .map(|pr| pr.as_recipient())
+        .collect::<Vec<_>>();
 
-    let encryptor = Encryptor::with_recipients(recipients)
-        .ok_or_else(|| EncryptError::new_err("expected at least one recipient"))?;
+    let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
+        .map_err(|_| EncryptError::new_err("expected at least one recipient"))?;
     let mut encrypted = vec![];
     let mut writer = encryptor
         .wrap_output(&mut encrypted)
@@ -171,7 +173,10 @@ fn encrypt_file(
 ) -> PyResult<()> {
     // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
     // is what the underlying `age` API expects.
-    let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
+    let recipients = recipients
+        .into_iter()
+        .map(|pr| pr.as_recipient())
+        .collect::<Vec<_>>();
 
     let reader = File::open(infile)?;
     let writer = File::create(outfile)?;
@@ -179,8 +184,8 @@ fn encrypt_file(
     let mut reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
 
-    let encryptor = Encryptor::with_recipients(recipients)
-        .ok_or_else(|| EncryptError::new_err("expected at least one recipient"))?;
+    let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
+        .map_err(|_| EncryptError::new_err("expected at least one recipient"))?;
     let mut writer = encryptor
         .wrap_output(&mut writer)
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
@@ -205,14 +210,7 @@ fn decrypt<'p>(
     let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
 
     let decryptor =
-        match age::Decryptor::new(ciphertext).map_err(|e| DecryptError::new_err(e.to_string()))? {
-            age::Decryptor::Recipients(d) => d,
-            age::Decryptor::Passphrase(_) => {
-                return Err(DecryptError::new_err(
-                    "invalid ciphertext (encrypted with passphrase, not identities)",
-                ))
-            }
-        };
+        age::Decryptor::new(ciphertext).map_err(|e| DecryptError::new_err(e.to_string()))?;
 
     let mut decrypted = vec![];
     let mut reader = decryptor
@@ -240,16 +238,8 @@ fn decrypt_file(
     let reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
 
-    let decryptor = match age::Decryptor::new_buffered(reader)
-        .map_err(|e| DecryptError::new_err(e.to_string()))?
-    {
-        age::Decryptor::Recipients(d) => d,
-        age::Decryptor::Passphrase(_) => {
-            return Err(DecryptError::new_err(
-                "invalid ciphertext (encrypted with passphrase, not identities)",
-            ))
-        }
-    };
+    let decryptor =
+        age::Decryptor::new_buffered(reader).map_err(|e| DecryptError::new_err(e.to_string()))?;
 
     let mut reader = decryptor
         .decrypt(identities)
@@ -273,13 +263,16 @@ fn encrypt_io(
 ) -> PyResult<()> {
     // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
     // is what the underlying `age` API expects.
-    let recipients = recipients.into_iter().map(|pr| pr.as_recipient()).collect();
+    let recipients = recipients
+        .into_iter()
+        .map(|pr| pr.as_recipient())
+        .collect::<Vec<_>>();
     let reader = from_pyobject(reader, true)?;
     let writer = from_pyobject(writer, false)?;
     let mut reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
-    let encryptor = Encryptor::with_recipients(recipients)
-        .ok_or_else(|| EncryptError::new_err("expected at least one recipient"))?;
+    let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
+        .map_err(|_| EncryptError::new_err("expected at least one recipient"))?;
     let mut writer = encryptor
         .wrap_output(&mut writer)
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
@@ -301,16 +294,8 @@ fn decrypt_io(
     let writer = from_pyobject(writer, false)?;
     let reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
-    let decryptor = match age::Decryptor::new_buffered(reader)
-        .map_err(|e| DecryptError::new_err(e.to_string()))?
-    {
-        age::Decryptor::Recipients(d) => d,
-        age::Decryptor::Passphrase(_) => {
-            return Err(DecryptError::new_err(
-                "invalid ciphertext (encrypted with passphrase, not identities)",
-            ))
-        }
-    };
+    let decryptor =
+        age::Decryptor::new_buffered(reader).map_err(|e| DecryptError::new_err(e.to_string()))?;
     let mut reader = decryptor
         .decrypt(identities)
         .map_err(|e| DecryptError::new_err(e.to_string()))?;
