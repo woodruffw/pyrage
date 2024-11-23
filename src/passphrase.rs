@@ -1,13 +1,16 @@
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    iter,
+};
 
-use age::{secrecy::Secret, Decryptor, Encryptor};
+use age::{scrypt, Decryptor, Encryptor};
 use pyo3::{prelude::*, types::PyBytes};
 
 use crate::{DecryptError, EncryptError};
 
 #[pyfunction]
 fn encrypt<'p>(py: Python<'p>, plaintext: &[u8], passphrase: &str) -> PyResult<Bound<'p, PyBytes>> {
-    let encryptor = Encryptor::with_user_passphrase(Secret::new(passphrase.into()));
+    let encryptor = Encryptor::with_user_passphrase(passphrase.into());
     let mut encrypted = vec![];
     let mut writer = encryptor
         .wrap_output(&mut encrypted)
@@ -28,18 +31,10 @@ fn decrypt<'p>(
     ciphertext: &[u8],
     passphrase: &str,
 ) -> PyResult<Bound<'p, PyBytes>> {
-    let decryptor =
-        match Decryptor::new(ciphertext).map_err(|e| DecryptError::new_err(e.to_string()))? {
-            Decryptor::Passphrase(d) => d,
-            _ => {
-                return Err(DecryptError::new_err(
-                    "invalid ciphertext (not passphrase encrypted)",
-                ))
-            }
-        };
+    let decryptor = Decryptor::new(ciphertext).map_err(|e| DecryptError::new_err(e.to_string()))?;
     let mut decrypted = vec![];
     let mut reader = decryptor
-        .decrypt(&Secret::new(passphrase.into()), None)
+        .decrypt(iter::once(&scrypt::Identity::new(passphrase.into()) as _))
         .map_err(|e| DecryptError::new_err(e.to_string()))?;
     reader
         .read_to_end(&mut decrypted)
