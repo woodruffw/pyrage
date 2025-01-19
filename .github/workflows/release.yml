@@ -106,4 +106,4 @@ jobs:
           merge-multiple: true
 
       - name: publish
-        uses: pypa/gh-action-pypi-publish@v1.12.2
+        uses: pypa/gh-action-pypi-publish@v1.12.3
