@@ -22,7 +22,7 @@ fn encrypt<'p>(py: Python<'p>, plaintext: &[u8], passphrase: &str) -> PyResult<B
         .finish()
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
-    Ok(PyBytes::new_bound(py, &encrypted))
+    Ok(PyBytes::new(py, &encrypted))
 }
 
 #[pyfunction]
@@ -40,11 +40,11 @@ fn decrypt<'p>(
         .read_to_end(&mut decrypted)
         .map_err(|e| DecryptError::new_err(e.to_string()))?;
 
-    Ok(PyBytes::new_bound(py, &decrypted))
+    Ok(PyBytes::new(py, &decrypted))
 }
 
 pub(crate) fn module(py: Python) -> PyResult<Bound<'_, PyModule>> {
-    let module = PyModule::new_bound(py, "passphrase")?;
+    let module = PyModule::new(py, "passphrase")?;
 
     module.add_wrapped(wrap_pyfunction!(encrypt))?;
     module.add_wrapped(wrap_pyfunction!(decrypt))?;

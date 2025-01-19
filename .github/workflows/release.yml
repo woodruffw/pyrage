@@ -5,6 +5,8 @@ on:
 
 name: release
 
+permissions: {}
+
 jobs:
   release-linux:
     name: build Linux release dists

@@ -44,7 +44,7 @@ impl Identity {
 }
 
 pub(crate) fn module(py: Python) -> PyResult<Bound<'_, PyModule>> {
-    let module = PyModule::new_bound(py, "ssh")?;
+    let module = PyModule::new(py, "ssh")?;
 
     module.add_class::<Recipient>()?;
     module.add_class::<Identity>()?;
