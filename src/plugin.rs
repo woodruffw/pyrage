@@ -187,7 +187,7 @@ impl IdentityPluginV1 {
 }
 
 pub(crate) fn module(py: Python<'_>) -> PyResult<Bound<'_, PyModule>> {
-    let module = PyModule::new_bound(py, "plugin")?;
+    let module = PyModule::new(py, "plugin")?;
 
     module.add_class::<Recipient>()?;
     module.add_class::<Identity>()?;

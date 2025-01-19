@@ -162,7 +162,7 @@ fn encrypt<'p>(
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
     // TODO: Avoid this copy. Maybe PyBytes::new_with?
-    Ok(PyBytes::new_bound(py, &encrypted))
+    Ok(PyBytes::new(py, &encrypted))
 }
 
 #[pyfunction]
@@ -221,7 +221,7 @@ fn decrypt<'p>(
         .map_err(|e| DecryptError::new_err(e.to_string()))?;
 
     // TODO: Avoid this copy. Maybe PyBytes::new_with?
-    Ok(PyBytes::new_bound(py, &decrypted))
+    Ok(PyBytes::new(py, &decrypted))
 }
 
 #[pyfunction]
@@ -336,14 +336,14 @@ fn pyrage(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     );
     m.add_submodule(&plugin)?;
 
-    m.add("IdentityError", py.get_type_bound::<IdentityError>())?;
-    m.add("RecipientError", py.get_type_bound::<RecipientError>())?;
+    m.add("IdentityError", py.get_type::<IdentityError>())?;
+    m.add("RecipientError", py.get_type::<RecipientError>())?;
 
-    m.add("EncryptError", py.get_type_bound::<EncryptError>())?;
+    m.add("EncryptError", py.get_type::<EncryptError>())?;
     m.add_wrapped(wrap_pyfunction!(encrypt))?;
     m.add_wrapped(wrap_pyfunction!(encrypt_file))?;
     m.add_wrapped(wrap_pyfunction!(encrypt_io))?;
-    m.add("DecryptError", py.get_type_bound::<DecryptError>())?;
+    m.add("DecryptError", py.get_type::<DecryptError>())?;
     m.add_wrapped(wrap_pyfunction!(decrypt))?;
     m.add_wrapped(wrap_pyfunction!(decrypt_file))?;
     m.add_wrapped(wrap_pyfunction!(decrypt_io))?;
