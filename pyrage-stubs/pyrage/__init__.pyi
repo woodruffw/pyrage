@@ -24,6 +24,8 @@ __all__ = (
     "decrypt_io",
     "RecipientError",
     "IdentityError",
+    "EncryptError",
+    "DecryptError",
 )
 
 
@@ -31,6 +33,12 @@ class RecipientError(Exception):
     ...
 
 class IdentityError(Exception):
+    ...
+
+class EncryptError(Exception):
+    ...
+
+class DecryptError(Exception):
     ...
 
 
