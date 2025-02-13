@@ -33,6 +33,9 @@ jobs:
           - macos-latest
           - ubuntu-latest
           - windows-latest
+          # Use 22.04, as 24.04 is unstable atm:
+          # https://github.com/orgs/community/discussions/148648#discussioncomment-11890717
+          - ubuntu-22.04-arm
         python:
           - "3.9"
           - "3.10"
