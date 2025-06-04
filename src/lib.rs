@@ -5,8 +5,8 @@ use std::io::Write;
 use std::{fs::File, io::Read};
 
 use age::{
-    DecryptError as RageDecryptError, EncryptError as RageEncryptError, Encryptor, Identity,
-    Recipient,
+    armor::ArmoredReader, armor::ArmoredWriter, armor::Format, DecryptError as RageDecryptError,
+    EncryptError as RageEncryptError, Encryptor, Identity, Recipient,
 };
 use age_core::format::{FileKey, Stanza};
 use pyo3::{
@@ -136,10 +136,12 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageIdentity> {
 create_exception!(pyrage, EncryptError, PyException);
 
 #[pyfunction]
+#[pyo3(signature = (plaintext, recipients, armored=false))]
 fn encrypt<'p>(
     py: Python<'p>,
     plaintext: &[u8],
     recipients: Vec<Box<dyn PyrageRecipient>>,
+    armored: bool,
 ) -> PyResult<Bound<'p, PyBytes>> {
     // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
     // is what the underlying `age` API expects.
@@ -151,13 +153,25 @@ fn encrypt<'p>(
     let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
         .map_err(|_| EncryptError::new_err("expected at least one recipient"))?;
     let mut encrypted = vec![];
-    let mut writer = encryptor
-        .wrap_output(&mut encrypted)
-        .map_err(|e| EncryptError::new_err(e.to_string()))?;
+
+    let mut writer = match armored {
+        true => encryptor
+            .wrap_output(ArmoredWriter::wrap_output(
+                &mut encrypted,
+                Format::AsciiArmor,
+            )?)
+            .map_err(|e| EncryptError::new_err(e.to_string()))?,
+        false => encryptor
+            .wrap_output(ArmoredWriter::wrap_output(&mut encrypted, Format::Binary)?)
+            .map_err(|e| EncryptError::new_err(e.to_string()))?,
+    };
+
     writer
         .write_all(plaintext)
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
     writer
+        .finish()
+        .map_err(|e| EncryptError::new_err(e.to_string()))?
         .finish()
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
@@ -166,10 +180,12 @@ fn encrypt<'p>(
 }
 
 #[pyfunction]
+#[pyo3(signature = (infile, outfile, recipients, armored=false))]
 fn encrypt_file(
     infile: String,
     outfile: String,
     recipients: Vec<Box<dyn PyrageRecipient>>,
+    armored: bool,
 ) -> PyResult<()> {
     // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
     // is what the underlying `age` API expects.
@@ -186,13 +202,21 @@ fn encrypt_file(
 
     let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
         .map_err(|_| EncryptError::new_err("expected at least one recipient"))?;
-    let mut writer = encryptor
-        .wrap_output(&mut writer)
-        .map_err(|e| EncryptError::new_err(e.to_string()))?;
+
+    let mut writer = match armored {
+        true => encryptor
+            .wrap_output(ArmoredWriter::wrap_output(&mut writer, Format::AsciiArmor)?)
+            .map_err(|e| EncryptError::new_err(e.to_string()))?,
+        false => encryptor
+            .wrap_output(ArmoredWriter::wrap_output(&mut writer, Format::Binary)?)
+            .map_err(|e| EncryptError::new_err(e.to_string()))?,
+    };
 
     std::io::copy(&mut reader, &mut writer).map_err(|e| EncryptError::new_err(e.to_string()))?;
 
     writer
+        .finish()
+        .map_err(|e| EncryptError::new_err(e.to_string()))?
         .finish()
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
@@ -209,8 +233,8 @@ fn decrypt<'p>(
 ) -> PyResult<Bound<'p, PyBytes>> {
     let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
 
-    let decryptor =
-        age::Decryptor::new(ciphertext).map_err(|e| DecryptError::new_err(e.to_string()))?;
+    let decryptor = age::Decryptor::new(ArmoredReader::new(ciphertext))
+        .map_err(|e| DecryptError::new_err(e.to_string()))?;
 
     let mut decrypted = vec![];
     let mut reader = decryptor
@@ -238,8 +262,8 @@ fn decrypt_file(
     let reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
 
-    let decryptor =
-        age::Decryptor::new_buffered(reader).map_err(|e| DecryptError::new_err(e.to_string()))?;
+    let decryptor = age::Decryptor::new_buffered(ArmoredReader::new(reader))
+        .map_err(|e| DecryptError::new_err(e.to_string()))?;
 
     let mut reader = decryptor
         .decrypt(identities)
@@ -256,10 +280,12 @@ fn from_pyobject(file: PyObject, read_only: bool) -> PyResult<PyFileLikeObject> 
 }
 
 #[pyfunction]
+#[pyo3(signature = (reader, writer, recipients, armored=false))]
 fn encrypt_io(
     reader: PyObject,
     writer: PyObject,
     recipients: Vec<Box<dyn PyrageRecipient>>,
+    armored: bool,
 ) -> PyResult<()> {
     // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
     // is what the underlying `age` API expects.
@@ -271,15 +297,27 @@ fn encrypt_io(
     let writer = from_pyobject(writer, false)?;
     let mut reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
+
     let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
         .map_err(|_| EncryptError::new_err("expected at least one recipient"))?;
-    let mut writer = encryptor
-        .wrap_output(&mut writer)
-        .map_err(|e| EncryptError::new_err(e.to_string()))?;
+
+    let mut writer = match armored {
+        true => encryptor
+            .wrap_output(ArmoredWriter::wrap_output(&mut writer, Format::AsciiArmor)?)
+            .map_err(|e| EncryptError::new_err(e.to_string()))?,
+        false => encryptor
+            .wrap_output(ArmoredWriter::wrap_output(&mut writer, Format::Binary)?)
+            .map_err(|e| EncryptError::new_err(e.to_string()))?,
+    };
+
     std::io::copy(&mut reader, &mut writer).map_err(|e| EncryptError::new_err(e.to_string()))?;
+
     writer
         .finish()
+        .map_err(|e| EncryptError::new_err(e.to_string()))?
+        .finish()
         .map_err(|e| EncryptError::new_err(e.to_string()))?;
+
     Ok(())
 }
 
@@ -294,8 +332,8 @@ fn decrypt_io(
     let writer = from_pyobject(writer, false)?;
     let reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
-    let decryptor =
-        age::Decryptor::new_buffered(reader).map_err(|e| DecryptError::new_err(e.to_string()))?;
+    let decryptor = age::Decryptor::new_buffered(ArmoredReader::new(reader))
+        .map_err(|e| DecryptError::new_err(e.to_string()))?;
     let mut reader = decryptor
         .decrypt(identities)
         .map_err(|e| DecryptError::new_err(e.to_string()))?;
