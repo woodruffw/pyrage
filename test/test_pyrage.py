@@ -3,6 +3,8 @@ import tempfile
 import unittest
 from io import BytesIO
 
+from parameterized import parameterized
+
 import pyrage
 
 from .utils import ssh_keypair
@@ -15,23 +17,25 @@ class TestPyrage(unittest.TestCase):
         ):
             pyrage.encrypt(b"test", [])
 
-    def test_roundtrip(self):
+    @parameterized.expand([(False,), (True,)])
+    def test_roundtrip(self, armored):
         identity = pyrage.x25519.Identity.generate()
         recipient = identity.to_public()
 
-        encrypted = pyrage.encrypt(b"test", [recipient])
+        encrypted = pyrage.encrypt(b"test", [recipient], armored=armored)
         decrypted = pyrage.decrypt(encrypted, [identity])
 
         self.assertEqual(b"test", decrypted)
 
-    def test_roundtrip_io_fh(self):
+    @parameterized.expand([(False,), (True,)])
+    def test_roundtrip_io_fh(self, armored):
         identity = pyrage.x25519.Identity.generate()
         recipient = identity.to_public()
         with tempfile.TemporaryFile() as unencrypted:
             unencrypted.write(b"test")
             unencrypted.seek(0)
             with tempfile.TemporaryFile() as encrypted:
-                pyrage.encrypt_io(unencrypted, encrypted, [recipient])
+                pyrage.encrypt_io(unencrypted, encrypted, [recipient], armored=armored)
                 encrypted.seek(0)
                 with tempfile.TemporaryFile() as decrypted:
                     pyrage.decrypt_io(encrypted, decrypted, [identity])
@@ -39,13 +43,14 @@ class TestPyrage(unittest.TestCase):
                     unencrypted.seek(0)
                     self.assertEqual(unencrypted.read(), decrypted.read())
 
-    def test_roundtrip_io_bytesio(self):
+    @parameterized.expand([(False,), (True,)])
+    def test_roundtrip_io_bytesio(self, armored):
         identity = pyrage.x25519.Identity.generate()
         recipient = identity.to_public()
-        unencrypted = BytesIO(b'test')
+        unencrypted = BytesIO(b"test")
         encrypted = BytesIO()
         decrypted = BytesIO()
-        pyrage.encrypt_io(unencrypted, encrypted, [recipient])
+        pyrage.encrypt_io(unencrypted, encrypted, [recipient], armored=armored)
         encrypted.seek(0)
         pyrage.decrypt_io(encrypted, decrypted, [identity])
         decrypted.seek(0)
@@ -57,27 +62,27 @@ class TestPyrage(unittest.TestCase):
         recipient = identity.to_public()
 
         with self.assertRaises(TypeError):
-            input = 'test'
+            input = "test"
             output = BytesIO()
             pyrage.encrypt_io(input, output, [recipient])
 
         with self.assertRaises(TypeError):
             input = BytesIO()
-            output = 'test'
+            output = "test"
             pyrage.encrypt_io(input, output, [recipient])
 
         with self.assertRaises(TypeError):
-            input = 'test'
+            input = "test"
             output = BytesIO()
             pyrage.decrypt_io(input, output, [recipient])
 
         with self.assertRaises(TypeError):
             input = BytesIO()
-            output = 'test'
+            output = "test"
             pyrage.decrypt_io(input, output, [recipient])
 
-
-    def test_roundtrip_file(self):
+    @parameterized.expand([(False,), (True,)])
+    def test_roundtrip_file(self, armored):
         identity = pyrage.x25519.Identity.generate()
         recipient = identity.to_public()
 
@@ -89,7 +94,7 @@ class TestPyrage(unittest.TestCase):
             with open(unencrypted, "wb") as file:
                 file.write(b"test")
 
-            pyrage.encrypt_file(unencrypted, encrypted, [recipient])
+            pyrage.encrypt_file(unencrypted, encrypted, [recipient], armored=armored)
             pyrage.decrypt_file(encrypted, decrypted, [identity])
 
             with open(unencrypted, "rb") as file1:
@@ -111,7 +116,8 @@ class TestPyrage(unittest.TestCase):
         decrypted = pyrage.decrypt(encrypted, [alice, bob])
         self.assertEqual(b"test", decrypted)
 
-    def test_roundtrip_matrix(self):
+    @parameterized.expand([(False,), (True,)])
+    def test_roundtrip_matrix(self, armored):
         identities = []
         recipients = []
 
@@ -126,7 +132,7 @@ class TestPyrage(unittest.TestCase):
             recipients.append(pyrage.ssh.Recipient.from_str(pubkey))
 
         # Encrypt to all recipients, decode using each identity.
-        encrypted = pyrage.encrypt(b"test matrix", recipients)
+        encrypted = pyrage.encrypt(b"test matrix", recipients, armored=armored)
         for identity in identities:
             self.assertEqual(b"test matrix", pyrage.decrypt(encrypted, [identity]))
 
