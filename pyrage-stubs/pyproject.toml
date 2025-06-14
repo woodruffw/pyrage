@@ -4,18 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyrage-stubs"
-version = "1.2.4"
+version = "1.3.0"
 description = "A PEP 561 stub package for pyrage's types"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "William Woodruff", email = "william@yossarian.net" }]
 classifiers = [
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Topic :: Security :: Cryptography",
   "Typing :: Stubs Only",
 ]
-dependencies = ["pyrage>=1.2.0,<2.0"]
+dependencies = ["pyrage>=1.3.0,<2.0"]
 requires-python = ">= 3.8"
 
 [project.urls]
