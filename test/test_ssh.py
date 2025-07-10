@@ -1,6 +1,6 @@
 import unittest
 
-from pyrage import ssh, RecipientError
+from pyrage import RecipientError, ssh
 
 from .utils import ssh_keypair
 
