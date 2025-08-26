@@ -66,7 +66,7 @@ fn decrypt<'p>(
     Ok(PyBytes::new(py, &decrypted))
 }
 
-pub(crate) fn module(py: Python) -> PyResult<Bound<'_, PyModule>> {
+pub(crate) fn module(py: Python<'_>) -> PyResult<Bound<'_, PyModule>> {
     let module = PyModule::new(py, "passphrase")?;
 
     module.add_wrapped(wrap_pyfunction!(encrypt))?;

@@ -12,11 +12,11 @@ jobs:
     name: build Linux release dists
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version-file: pyproject.toml
 
@@ -24,7 +24,7 @@ jobs:
         run: make dist-pyrage
 
       - name: upload linux dists
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: pyrage-dists-linux
           path: dist/
@@ -35,11 +35,11 @@ jobs:
     # https://github.com/orgs/community/discussions/148648#discussioncomment-11890717
     runs-on: ubuntu-22.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version-file: pyproject.toml
 
@@ -47,7 +47,7 @@ jobs:
         run: make dist-pyrage
 
       - name: upload linux dists
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: pyrage-dists-linux-arm
           path: dist/
@@ -56,11 +56,11 @@ jobs:
     name: build macOS release dists
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version-file: pyproject.toml
 
@@ -73,7 +73,7 @@ jobs:
           mv target/wheels/ dist/
 
       - name: upload macos dists
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: pyrage-dists-macos
           path: dist/
@@ -82,11 +82,11 @@ jobs:
     name: build Windows release dists
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version-file: pyproject.toml
 
@@ -99,7 +99,7 @@ jobs:
           mv target/wheels/ dist/
 
       - name: upload windows dists
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: pyrage-dists-windows
           path: dist/
@@ -123,11 +123,11 @@ jobs:
 
     steps:
       - name: fetch dists
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           pattern: pyrage-dists-*
           path: dist/
           merge-multiple: true
 
       - name: publish
-        uses: pypa/gh-action-pypi-publish@v1.12.4
+        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
