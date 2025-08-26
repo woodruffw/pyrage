@@ -51,7 +51,7 @@ impl Identity {
     }
 }
 
-pub(crate) fn module(py: Python) -> PyResult<Bound<'_, PyModule>> {
+pub(crate) fn module(py: Python<'_>) -> PyResult<Bound<'_, PyModule>> {
     let module = PyModule::new(py, "x25519")?;
 
     module.add_class::<Recipient>()?;
