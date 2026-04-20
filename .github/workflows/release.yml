@@ -24,7 +24,7 @@ jobs:
         run: make dist-pyrage
 
       - name: upload linux dists
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pyrage-dists-linux
           path: dist/
@@ -47,7 +47,7 @@ jobs:
         run: make dist-pyrage
 
       - name: upload linux dists
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pyrage-dists-linux-arm
           path: dist/
@@ -73,7 +73,7 @@ jobs:
           mv target/wheels/ dist/
 
       - name: upload macos dists
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pyrage-dists-macos
           path: dist/
@@ -99,7 +99,7 @@ jobs:
           mv target/wheels/ dist/
 
       - name: upload windows dists
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pyrage-dists-windows
           path: dist/
@@ -130,4 +130,4 @@ jobs:
           merge-multiple: true
 
       - name: publish
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
