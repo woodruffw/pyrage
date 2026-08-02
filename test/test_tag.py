@@ -2,14 +2,14 @@ import unittest
 
 from pyrage import RecipientError, tag
 
-from test.utils import TAG_RECIPIENT
+from test.utils import age_recipient
 
 
 class TestRecipient(unittest.TestCase):
     def test_from_str(self):
-        recipient = tag.Recipient.from_str(TAG_RECIPIENT)
+        recipient = tag.Recipient.from_str(age_recipient("tag"))
         self.assertIsInstance(recipient, tag.Recipient)
-        self.assertEqual(str(recipient), TAG_RECIPIENT)
+        self.assertEqual(str(recipient), age_recipient("tag"))
 
     def test_from_str_invalid(self):
         with self.assertRaisesRegex(RecipientError, "invalid Bech32 encoding"):

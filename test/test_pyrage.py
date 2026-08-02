@@ -7,7 +7,7 @@ from parameterized import parameterized
 
 import pyrage
 
-from .utils import TAG_RECIPIENT, TAGPQ_RECIPIENT, ssh_keypair
+from .utils import age_recipient, ssh_keypair
 
 
 class TestPyrage(unittest.TestCase):
@@ -116,7 +116,7 @@ class TestPyrage(unittest.TestCase):
 
     @parameterized.expand([(False,), (True,)])
     def test_pq_encryption(self, armored):
-        recipient = pyrage.tagpq.Recipient.from_str(TAGPQ_RECIPIENT)
+        recipient = pyrage.tagpq.Recipient.from_str(age_recipient("tagpq"))
         encrypted = pyrage.encrypt(b"test", [recipient], armored=armored)
         self.assertNotEqual(encrypted, b"test")
 
@@ -127,11 +127,10 @@ class TestPyrage(unittest.TestCase):
 
         age_identity = pyrage.x25519.Identity.generate()
         identities.append(age_identity)
-        age_recipient = age_identity.to_public()
-        recipients.append(age_recipient)
+        recipients.append(age_identity.to_public())
 
         # tag (only encryption - so no identity)
-        recipients.append(pyrage.tag.Recipient.from_str(TAG_RECIPIENT))
+        recipients.append(pyrage.tag.Recipient.from_str(age_recipient("tag")))
 
         for filename in ["ed25519", "rsa4096", "rsa2048"]:
             pubkey, privkey = ssh_keypair(filename)
@@ -151,7 +150,7 @@ class TestPyrage(unittest.TestCase):
         """
         recipients = [
             # both pq and non-pq
-            pyrage.tagpq.Recipient.from_str(TAGPQ_RECIPIENT),
+            pyrage.tagpq.Recipient.from_str(age_recipient("tagpq")),
             pyrage.x25519.Identity.generate().to_public(),
         ]
 
