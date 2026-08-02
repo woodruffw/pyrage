@@ -105,8 +105,10 @@ impl Identity {
     }
 
     #[classmethod]
-    fn default_for_plugin(_cls: &Bound<'_, PyType>, plugin: &str) -> Self {
-        Self(age::plugin::Identity::default_for_plugin(plugin))
+    fn default_for_plugin(_cls: &Bound<'_, PyType>, plugin: &str) -> PyResult<Self> {
+        age::plugin::Identity::default_for_plugin(plugin)
+            .map(Self)
+            .map_err(|e| IdentityError::new_err(e.to_string()))
     }
 
     fn plugin(&self) -> String {
