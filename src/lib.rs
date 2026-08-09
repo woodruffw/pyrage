@@ -21,9 +21,11 @@ use pyo3_file::PyFileLikeObject;
 mod passphrase;
 mod plugin;
 mod ssh;
+mod tag;
+mod tagpq;
 mod x25519;
 
-// These exceptions are raised by the `pyrage.ssh` and `pyrage.x25519` APIs,
+// These exceptions are raised by the `pyrage.[x25519|ssh|plugin|tag|tagpq]` APIs,
 // where appropriate.
 create_exception!(pyrage, RecipientError, PyException);
 create_exception!(pyrage, IdentityError, PyException);
@@ -66,7 +68,13 @@ macro_rules! recipient_traits {
     }
 }
 
-recipient_traits!(ssh::Recipient, x25519::Recipient, plugin::RecipientPluginV1);
+recipient_traits!(
+    ssh::Recipient,
+    tag::Recipient,
+    tagpq::Recipient,
+    x25519::Recipient,
+    plugin::RecipientPluginV1
+);
 
 // This macro generates two trait impls for each passed in type:
 //
@@ -102,6 +110,10 @@ identity_traits!(ssh::Identity, x25519::Identity, plugin::IdentityPluginV1);
 impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(recipient) = ob.extract::<x25519::Recipient>() {
+            Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
+        } else if let Ok(recipient) = ob.extract::<tag::Recipient>() {
+            Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
+        } else if let Ok(recipient) = ob.extract::<tagpq::Recipient>() {
             Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
         } else if let Ok(recipient) = ob.extract::<ssh::Recipient>() {
             Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
@@ -151,7 +163,7 @@ fn encrypt<'p>(
         .collect::<Vec<_>>();
 
     let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
-        .map_err(|_| EncryptError::new_err("expected at least one recipient"))?;
+        .map_err(|e| EncryptError::new_err(e.to_string()))?;
     let mut encrypted = vec![];
 
     let mut writer = match armored {
@@ -201,7 +213,7 @@ fn encrypt_file(
     let mut writer = std::io::BufWriter::new(writer);
 
     let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
-        .map_err(|_| EncryptError::new_err("expected at least one recipient"))?;
+        .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
     let mut writer = match armored {
         true => encryptor
@@ -299,7 +311,7 @@ fn encrypt_io(
     let mut writer = std::io::BufWriter::new(writer);
 
     let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
-        .map_err(|_| EncryptError::new_err("expected at least one recipient"))?;
+        .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
     let mut writer = match armored {
         true => encryptor
@@ -353,6 +365,14 @@ fn pyrage(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
         "import sys; sys.modules['pyrage.x25519'] = x25519"
     );
     m.add_submodule(&x25519)?;
+
+    let tag = tag::module(py)?;
+    py_run!(py, tag, "import sys; sys.modules['pyrage.tag'] = tag");
+    m.add_submodule(&tag)?;
+
+    let tagpq = tagpq::module(py)?;
+    py_run!(py, tagpq, "import sys; sys.modules['pyrage.tagpq'] = tagpq");
+    m.add_submodule(&tagpq)?;
 
     let ssh = ssh::module(py)?;
     py_run!(py, ssh, "import sys; sys.modules['pyrage.ssh'] = ssh");

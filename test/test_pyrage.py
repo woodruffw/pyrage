@@ -7,14 +7,12 @@ from parameterized import parameterized
 
 import pyrage
 
-from .utils import ssh_keypair
+from .utils import age_recipient, ssh_keypair
 
 
 class TestPyrage(unittest.TestCase):
     def test_encrypt_fails_with_no_receipients(self):
-        with self.assertRaisesRegex(
-            pyrage.EncryptError, "expected at least one recipient"
-        ):
+        with self.assertRaisesRegex(pyrage.EncryptError, "Missing recipients"):
             pyrage.encrypt(b"test", [])
 
     @parameterized.expand([(False,), (True,)])
@@ -117,14 +115,22 @@ class TestPyrage(unittest.TestCase):
         self.assertEqual(b"test", decrypted)
 
     @parameterized.expand([(False,), (True,)])
+    def test_pq_encryption(self, armored):
+        recipient = pyrage.tagpq.Recipient.from_str(age_recipient("tagpq"))
+        encrypted = pyrage.encrypt(b"test", [recipient], armored=armored)
+        self.assertNotEqual(encrypted, b"test")
+
+    @parameterized.expand([(False,), (True,)])
     def test_roundtrip_matrix(self, armored):
         identities = []
         recipients = []
 
         age_identity = pyrage.x25519.Identity.generate()
         identities.append(age_identity)
-        age_recipient = age_identity.to_public()
-        recipients.append(age_recipient)
+        recipients.append(age_identity.to_public())
+
+        # tag (only encryption - so no identity)
+        recipients.append(pyrage.tag.Recipient.from_str(age_recipient("tag")))
 
         for filename in ["ed25519", "rsa4096", "rsa2048"]:
             pubkey, privkey = ssh_keypair(filename)
@@ -135,6 +141,24 @@ class TestPyrage(unittest.TestCase):
         encrypted = pyrage.encrypt(b"test matrix", recipients, armored=armored)
         for identity in identities:
             self.assertEqual(b"test matrix", pyrage.decrypt(encrypted, [identity]))
+
+    @parameterized.expand([(False,), (True,)])
+    def test_pq_mixed(self, armored):
+        """
+        Tests that trying to mix pq and non-pq recipients fail with an somewhat
+        understandable error message
+        """
+        recipients = [
+            # both pq and non-pq
+            pyrage.tagpq.Recipient.from_str(age_recipient("tagpq")),
+            pyrage.x25519.Identity.generate().to_public(),
+        ]
+
+        with self.assertRaisesRegex(
+            pyrage.EncryptError,
+            r"Cannot encrypt to a recipient with labels '[\u2068]?postquantum[\u2069]?' alongside a recipient with no labels",
+        ):
+            pyrage.encrypt(b"test matrix", recipients, armored=armored)
 
 
 if __name__ == "__main__":
