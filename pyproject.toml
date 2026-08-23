@@ -10,3 +10,16 @@ dynamic = ["readme", "version"]
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
+
+[dependency-groups]
+dev = [
+  "maturin",
+  "parameterized",
+  "pyrage-stubs",
+]
+
+[tool.uv]
+exclude-newer = "P7D"
+
+[tool.uv.sources]
+pyrage-stubs = { path = "pyrage-stubs", editable = true }

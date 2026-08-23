@@ -16,10 +16,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version-file: pyproject.toml
-
       - name: build wheels
         run: make dist-pyrage
 
@@ -39,10 +35,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version-file: pyproject.toml
-
       - name: build wheels
         run: make dist-pyrage
 
@@ -60,16 +52,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version-file: pyproject.toml
 
       - name: build wheels
         run: |
           rustup target add aarch64-apple-darwin x86_64-apple-darwin
-          make env
-          source env/bin/activate
-          maturin build --release --strip --target universal2-apple-darwin
+          uv run --locked maturin build --release --strip --target universal2-apple-darwin
           mv target/wheels/ dist/
 
       - name: upload macos dists
@@ -86,16 +76,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version-file: pyproject.toml
 
       - name: build wheels
         shell: bash
         run: |
-          make env
-          source env/Scripts/activate
-          maturin build --release --strip
+          uv run --locked maturin build --release --strip
           mv target/wheels/ dist/
 
       - name: upload windows dists
