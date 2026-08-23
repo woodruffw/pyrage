@@ -13,12 +13,9 @@ build-backend = "maturin"
 
 [dependency-groups]
 dev = [
-  "build",
   "maturin",
   "parameterized",
   "pyrage-stubs",
-  "twine",
-  "wheel",
 ]
 
 [tool.uv.sources]
