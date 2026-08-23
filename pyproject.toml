@@ -18,5 +18,8 @@ dev = [
   "pyrage-stubs",
 ]
 
+[tool.uv]
+exclude-newer = "P7D"
+
 [tool.uv.sources]
 pyrage-stubs = { path = "pyrage-stubs", editable = true }
