@@ -78,8 +78,8 @@ decrypted = passphrase.decrypt(encrypted, "my extremely secure password")
 ## Development
 
 ```console
-$ source env/bin/activate
-$ make develop
+$ uv sync --locked
+$ uv run --locked python -m unittest
 ```
 
 ## Licensing

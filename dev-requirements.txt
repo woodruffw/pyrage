@@ -1,5 +1,0 @@
-build
-wheel
-twine
-maturin
-parameterized
