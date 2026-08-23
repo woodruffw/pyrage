@@ -1,3 +1,4 @@
+PYTHON = python
 VENV = env
 VENV_BIN = $(VENV)/bin
 
@@ -14,7 +15,7 @@ all:
 env: env/pyvenv.cfg
 
 $(VENV)/pyvenv.cfg: dev-requirements.txt
-	python -m venv $(VENV)
+	$(PYTHON) -m venv $(VENV)
 	$(VENV_BIN)/python -m pip install --upgrade pip
 	$(VENV_BIN)/python -m pip install --requirement dev-requirements.txt
 
