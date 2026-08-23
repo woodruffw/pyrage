@@ -1,28 +1,30 @@
 [package]
 name = "pyrage"
-version = "1.3.0"
-authors = ["William Woodruff <william@yossarian.net>"]
+version = "1.4.0"
 edition = "2021"
 description = "Python bindings for rage (age in Rust)"
+readme = "README.md"
 homepage = "https://github.com/woodruffw/pyrage"
 repository = "https://github.com/woodruffw/pyrage"
-readme = "README.md"
 license = "MIT"
 
 [package.metadata.release]
-publish = false # handled by GitHub Actions
+publish = false  # handled by GitHub Actions
 push = true
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
+age = { version = "0.12.1", features = ["armor", "plugin", "ssh"] }
 age-core = "0.12"
-age = { version = "0.12.1", features = ["ssh", "plugin", "armor"] }
-pyo3 = { version = "0.24.2", features = [
-    "extension-module",
+pyo3 = {
+  version = "0.24.2",
+  features = [
     "abi3",
     "abi3-py39",
+    "extension-module",
     "py-clone",
-] }
+  ]
+}
 pyo3-file = "0.12.0"
