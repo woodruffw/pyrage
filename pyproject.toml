@@ -1,12 +1,12 @@
+[project]
+name = "pyrage"
+requires-python = ">=3.10"
+classifiers = [
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Rust",
+]
+dynamic = ["readme", "version"]
+
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
-
-[project]
-name = "pyrage"
-classifiers = [
-    "Programming Language :: Rust",
-    "Operating System :: POSIX :: Linux",
-]
-requires-python = ">=3.9"
-dynamic = ["version", "readme"]

@@ -37,35 +37,35 @@ jobs:
           # https://github.com/orgs/community/discussions/148648#discussioncomment-11890717
           - ubuntu-22.04-arm
         python:
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-      with:
-        python-version: ${{ matrix.python }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
 
-    - name: Build
-      shell: bash
-      run: make develop
+      - name: Build
+        shell: bash
+        run: make develop
 
-    - name: Test
-      shell: bash
-      run: make test
+      - name: Test
+        shell: bash
+        run: make test
 
   all-tests-pass:
     if: always()
 
     needs:
-    - test
+      - test
 
     runs-on: ubuntu-latest
 
