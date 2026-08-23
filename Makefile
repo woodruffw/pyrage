@@ -13,6 +13,10 @@ develop:
 test: develop
 	$(UV) run --locked python -m unittest
 
+.PHONY: typecheck
+typecheck:
+	$(UV) run --locked ty check test
+
 .PHONY: dist
 dist: dist-pyrage dist-pyrage-stubs
 
