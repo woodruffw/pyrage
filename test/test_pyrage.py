@@ -62,22 +62,22 @@ class TestPyrage(unittest.TestCase):
         with self.assertRaises(TypeError):
             input = "test"
             output = BytesIO()
-            pyrage.encrypt_io(input, output, [recipient])
+            pyrage.encrypt_io(input, output, [recipient])  # ty: ignore[invalid-argument-type]
 
         with self.assertRaises(TypeError):
             input = BytesIO()
             output = "test"
-            pyrage.encrypt_io(input, output, [recipient])
+            pyrage.encrypt_io(input, output, [recipient])  # ty: ignore[invalid-argument-type]
 
         with self.assertRaises(TypeError):
             input = "test"
             output = BytesIO()
-            pyrage.decrypt_io(input, output, [recipient])
+            pyrage.decrypt_io(input, output, [identity])  # ty: ignore[invalid-argument-type]
 
         with self.assertRaises(TypeError):
             input = BytesIO()
             output = "test"
-            pyrage.decrypt_io(input, output, [recipient])
+            pyrage.decrypt_io(input, output, [identity])  # ty: ignore[invalid-argument-type]
 
     @parameterized.expand([(False,), (True,)])
     def test_roundtrip_file(self, armored):
