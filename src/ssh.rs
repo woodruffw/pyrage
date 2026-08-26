@@ -4,7 +4,7 @@ use pyo3::{prelude::*, types::PyType};
 
 use crate::{IdentityError, RecipientError};
 
-#[pyclass(module = "pyrage.ssh")]
+#[pyclass(from_py_object, module = "pyrage.ssh")]
 #[derive(Clone)]
 pub(crate) struct Recipient(pub(crate) age::ssh::Recipient);
 
@@ -19,7 +19,7 @@ impl Recipient {
     }
 }
 
-#[pyclass(module = "pyrage.ssh")]
+#[pyclass(from_py_object, module = "pyrage.ssh")]
 #[derive(Clone)]
 pub(crate) struct Identity(pub(crate) age::ssh::Identity);
 

@@ -4,7 +4,7 @@ use pyo3::{prelude::*, types::PyType};
 
 use crate::RecipientError;
 
-#[pyclass(module = "pyrage.tagpq")]
+#[pyclass(from_py_object, module = "pyrage.tagpq")]
 #[derive(Clone)]
 pub(crate) struct Recipient(pub(crate) age::tagpq::Recipient);
 

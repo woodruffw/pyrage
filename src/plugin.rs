@@ -25,14 +25,14 @@ impl PyCallbacks {
 // These callbacks don't look like they're supposed to fail anyway.
 impl age::Callbacks for PyCallbacks {
     fn display_message(&self, message: &str) {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             self.0
                 .call_method1(py, pyo3::intern!(py, "display_message"), (message,))
                 .expect("`display_message` callback error")
         });
     }
     fn confirm(&self, message: &str, yes_string: &str, no_string: Option<&str>) -> Option<bool> {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             self.0
                 .call_method1(
                     py,
@@ -45,7 +45,7 @@ impl age::Callbacks for PyCallbacks {
         .expect("type error in `confirm` callback")
     }
     fn request_public_string(&self, description: &str) -> Option<String> {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             self.0
                 .call_method1(
                     py,
@@ -58,7 +58,7 @@ impl age::Callbacks for PyCallbacks {
         .expect("type error in `request_public_string` callback")
     }
     fn request_passphrase(&self, description: &str) -> Option<age::secrecy::SecretString> {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             self.0
                 .call_method1(py, pyo3::intern!(py, "request_passphrase"), (description,))
                 .expect("`request_passphrase` callback error")
@@ -69,7 +69,7 @@ impl age::Callbacks for PyCallbacks {
     }
 }
 
-#[pyclass(module = "pyrage.plugin")]
+#[pyclass(from_py_object, module = "pyrage.plugin")]
 #[derive(Clone)]
 pub(crate) struct Recipient(pub(crate) age::plugin::Recipient);
 
@@ -91,7 +91,7 @@ impl Recipient {
     }
 }
 
-#[pyclass(module = "pyrage.plugin")]
+#[pyclass(from_py_object, module = "pyrage.plugin")]
 #[derive(Clone)]
 pub(crate) struct Identity(pub(crate) age::plugin::Identity);
 
@@ -120,7 +120,7 @@ impl Identity {
     }
 }
 
-#[pyclass(module = "pyrage.plugin")]
+#[pyclass(from_py_object, module = "pyrage.plugin")]
 #[derive(Clone)]
 pub(crate) struct RecipientPluginV1(pub(crate) Arc<age::plugin::RecipientPluginV1<PyCallbacks>>);
 
@@ -157,7 +157,7 @@ impl RecipientPluginV1 {
     }
 }
 
-#[pyclass(module = "pyrage.plugin")]
+#[pyclass(from_py_object, module = "pyrage.plugin")]
 #[derive(Clone)]
 pub(crate) struct IdentityPluginV1(pub(crate) Arc<age::plugin::IdentityPluginV1<PyCallbacks>>);
 

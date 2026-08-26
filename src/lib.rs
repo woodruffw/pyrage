@@ -15,6 +15,7 @@ use pyo3::{
     prelude::*,
     py_run,
     types::PyBytes,
+    Borrowed,
 };
 use pyo3_file::PyFileLikeObject;
 
@@ -107,8 +108,10 @@ identity_traits!(ssh::Identity, x25519::Identity, plugin::IdentityPluginV1);
 // The implementation itself is straightforward: we try to turn the
 // `PyAny` into each concrete recipient type, which we then perform the trait
 // cast on.
-impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
-    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+impl<'py> FromPyObject<'_, 'py> for Box<dyn PyrageRecipient> {
+    type Error = PyErr;
+
+    fn extract(ob: Borrowed<'_, 'py, PyAny>) -> PyResult<Self> {
         if let Ok(recipient) = ob.extract::<x25519::Recipient>() {
             Ok(Box::new(recipient) as Box<dyn PyrageRecipient>)
         } else if let Ok(recipient) = ob.extract::<tag::Recipient>() {
@@ -129,8 +132,10 @@ impl<'source> FromPyObject<'source> for Box<dyn PyrageRecipient> {
 
 // Similar to the above: we try to turn the `PyAny` into a concrete identity type,
 // which we then perform the trait cast on.
-impl<'source> FromPyObject<'source> for Box<dyn PyrageIdentity> {
-    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+impl<'py> FromPyObject<'_, 'py> for Box<dyn PyrageIdentity> {
+    type Error = PyErr;
+
+    fn extract(ob: Borrowed<'_, 'py, PyAny>) -> PyResult<Self> {
         if let Ok(identity) = ob.extract::<x25519::Identity>() {
             Ok(Box::new(identity) as Box<dyn PyrageIdentity>)
         } else if let Ok(identity) = ob.extract::<ssh::Identity>() {
@@ -286,7 +291,7 @@ fn decrypt_file(
     Ok(())
 }
 
-fn from_pyobject(file: PyObject, read_only: bool) -> PyResult<PyFileLikeObject> {
+fn from_pyobject(file: Py<PyAny>, read_only: bool) -> PyResult<PyFileLikeObject> {
     // is a file-like
     PyFileLikeObject::with_requirements(file, read_only, !read_only, false, false)
 }
@@ -294,8 +299,8 @@ fn from_pyobject(file: PyObject, read_only: bool) -> PyResult<PyFileLikeObject> 
 #[pyfunction]
 #[pyo3(signature = (reader, writer, recipients, armored=false))]
 fn encrypt_io(
-    reader: PyObject,
-    writer: PyObject,
+    reader: Py<PyAny>,
+    writer: Py<PyAny>,
     recipients: Vec<Box<dyn PyrageRecipient>>,
     armored: bool,
 ) -> PyResult<()> {
@@ -335,8 +340,8 @@ fn encrypt_io(
 
 #[pyfunction]
 fn decrypt_io(
-    reader: PyObject,
-    writer: PyObject,
+    reader: Py<PyAny>,
+    writer: Py<PyAny>,
     identities: Vec<Box<dyn PyrageIdentity>>,
 ) -> PyResult<()> {
     let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
