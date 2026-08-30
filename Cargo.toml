@@ -19,7 +19,7 @@ crate-type = ["cdylib"]
 age = { version = "0.12.1", features = ["armor", "plugin", "ssh"] }
 age-core = "0.12"
 pyo3 = {
-  version = "0.24.2",
+  version = "0.29.2",
   features = [
     "abi3",
     "abi3-py310",
@@ -27,4 +27,4 @@ pyo3 = {
     "py-clone",
   ]
 }
-pyo3-file = "0.12.0"
+pyo3-file = "0.17.0"

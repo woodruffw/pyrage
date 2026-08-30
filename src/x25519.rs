@@ -5,7 +5,7 @@ use pyo3::{prelude::*, types::PyType};
 
 use crate::{IdentityError, RecipientError};
 
-#[pyclass(module = "pyrage.x25519")]
+#[pyclass(from_py_object, module = "pyrage.x25519")]
 #[derive(Clone)]
 pub(crate) struct Recipient(pub(crate) age::x25519::Recipient);
 
@@ -23,7 +23,7 @@ impl Recipient {
     }
 }
 
-#[pyclass(module = "pyrage.x25519")]
+#[pyclass(from_py_object, module = "pyrage.x25519")]
 #[derive(Clone)]
 pub(crate) struct Identity(pub(crate) age::x25519::Identity);
 
