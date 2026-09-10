@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from typing import Optional
 
 class Identity:
     @classmethod
-    def from_buffer(cls, buf: bytes) -> Identity:
+    def from_buffer(cls, buf: bytes, passphrase: Optional[str]) -> Identity:
         ...
-
 
 class Recipient:
     @classmethod

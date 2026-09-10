@@ -12,6 +12,12 @@ class TestIdentity(unittest.TestCase):
             identity = ssh.Identity.from_buffer(privkey.encode())
             self.assertIsInstance(identity, ssh.Identity)
 
+    def test_from_buffer_encrypted(self):
+        for filename in ["ed25519-encrypted", "rsa4096-encrypted", "rsa2048-encrypted"]:
+            _pubkey, privkey = ssh_keypair(filename)
+            identity = ssh.Identity.from_buffer(privkey.encode(), "asdfghjkl")
+            self.assertIsInstance(identity, ssh.Identity)
+
 
 class TestRecipient(unittest.TestCase):
     def test_from_str(self):
