@@ -26,14 +26,22 @@ pub(crate) struct Identity(pub(crate) age::ssh::Identity);
 #[pymethods]
 impl Identity {
     #[classmethod]
-    fn from_buffer(_cls: &Bound<'_, PyType>, buf: &[u8]) -> PyResult<Self> {
+    #[pyo3(signature = (buf, passphrase = None))]
+    fn from_buffer(_cls: &Bound<'_, PyType>, buf: &[u8], passphrase: Option<&str>) -> PyResult<Self> {
         let identity = age::ssh::Identity::from_buffer(buf, None)
             .map_err(|e| IdentityError::new_err(e.to_string()))?;
 
         match identity {
             age::ssh::Identity::Unencrypted(_) => Ok(Self(identity)),
-            age::ssh::Identity::Encrypted(_) => {
-                Err(IdentityError::new_err("ssh key must be decrypted first"))
+            age::ssh::Identity::Encrypted(ek) => {
+                if let Some(pass) = passphrase {
+                    let decrypted_key = ek.decrypt(pass.into())
+                        .map_err(|e| IdentityError::new_err(e.to_string()))?;
+
+                    Ok(Self(age::ssh::Identity::Unencrypted(decrypted_key)))
+                } else {
+                    Err(IdentityError::new_err("ssh key is encrypted but a passphrase wasn't provided"))
+                }
             }
             age::ssh::Identity::Unsupported(uk) => {
                 // Unsupported doesn't have a Display impl, only a hardcoded `display` function.
