@@ -27,7 +27,11 @@ pub(crate) struct Identity(pub(crate) age::ssh::Identity);
 impl Identity {
     #[classmethod]
     #[pyo3(signature = (buf, passphrase = None))]
-    fn from_buffer(_cls: &Bound<'_, PyType>, buf: &[u8], passphrase: Option<&str>) -> PyResult<Self> {
+    fn from_buffer(
+        _cls: &Bound<'_, PyType>,
+        buf: &[u8],
+        passphrase: Option<&str>,
+    ) -> PyResult<Self> {
         let identity = age::ssh::Identity::from_buffer(buf, None)
             .map_err(|e| IdentityError::new_err(e.to_string()))?;
 
@@ -35,12 +39,15 @@ impl Identity {
             age::ssh::Identity::Unencrypted(_) => Ok(Self(identity)),
             age::ssh::Identity::Encrypted(ek) => {
                 if let Some(pass) = passphrase {
-                    let decrypted_key = ek.decrypt(pass.into())
+                    let decrypted_key = ek
+                        .decrypt(pass.into())
                         .map_err(|e| IdentityError::new_err(e.to_string()))?;
 
                     Ok(Self(age::ssh::Identity::Unencrypted(decrypted_key)))
                 } else {
-                    Err(IdentityError::new_err("ssh key is encrypted but a passphrase wasn't provided"))
+                    Err(IdentityError::new_err(
+                        "ssh key is encrypted but a passphrase wasn't provided",
+                    ))
                 }
             }
             age::ssh::Identity::Unsupported(uk) => {
