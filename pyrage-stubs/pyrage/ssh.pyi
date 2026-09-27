@@ -4,7 +4,7 @@ from typing import Optional
 
 class Identity:
     @classmethod
-    def from_buffer(cls, buf: bytes, passphrase: Optional[str]) -> Identity:
+    def from_buffer(cls, buf: bytes, passphrase: Optional[str] = None) -> Identity:
         ...
 
 class Recipient:
