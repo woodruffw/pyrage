@@ -206,22 +206,31 @@ class TestAsync(unittest.IsolatedAsyncioTestCase):
         recipient = identity.to_public()
         plaintext = b"\x00" * (64 * 1024 * 1024)
 
-        ticks = 0
+        # Track the longest stretch the loop went without running us. Yield
+        # with `sleep(0)` rather than a timed sleep, whose resolution is
+        # ~15ms on Windows. The clock starts before the call, so a call that
+        # blocked the loop (even before returning) would count as one gap.
+        start = last = time.monotonic()
+        max_gap = 0.0
 
         async def ticker():
-            nonlocal ticks
+            nonlocal last, max_gap
             while True:
-                await asyncio.sleep(0.001)
-                ticks += 1
+                now = time.monotonic()
+                max_gap = max(max_gap, now - last)
+                last = now
+                await asyncio.sleep(0)
 
         task = asyncio.create_task(ticker())
         try:
             await pyrage.encrypt_async(plaintext, [recipient])
+            # Let the ticker run once more, to record any gap still pending.
+            await asyncio.sleep(0)
         finally:
             task.cancel()
+        elapsed = time.monotonic() - start
 
-        # If encryption blocked the loop, the ticker couldn't have run.
-        self.assertGreater(ticks, 5)
+        self.assertLess(max_gap, elapsed / 2)
 
     async def test_requires_running_loop(self):
         def call():
