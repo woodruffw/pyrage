@@ -79,6 +79,63 @@ class TestPyrage(unittest.TestCase):
             output = "test"
             pyrage.decrypt_io(input, output, [identity])  # ty: ignore[invalid-argument-type]
 
+    def test_io_errors_propagate(self):
+        """
+        Exceptions raised by a file-like surface unchanged, rather than being
+        flattened into EncryptError/DecryptError.
+        """
+        identity = pyrage.x25519.Identity.generate()
+        recipient = identity.to_public()
+
+        class Boom(Exception):
+            pass
+
+        class FailingReader(BytesIO):
+            def read(self, *args):
+                raise Boom("read")
+
+        class FailingWriter(BytesIO):
+            def write(self, *args):
+                raise Boom("write")
+
+        with self.assertRaisesRegex(Boom, "read"):
+            pyrage.encrypt_io(FailingReader(), BytesIO(), [recipient])
+        with self.assertRaisesRegex(Boom, "write"):
+            pyrage.encrypt_io(BytesIO(b"test"), FailingWriter(), [recipient])
+
+        encrypted = pyrage.encrypt(b"test", [recipient])
+        with self.assertRaisesRegex(Boom, "read"):
+            pyrage.decrypt_io(FailingReader(), BytesIO(), [identity])
+        with self.assertRaisesRegex(Boom, "write"):
+            pyrage.decrypt_io(BytesIO(encrypted), FailingWriter(), [identity])
+
+    def test_decrypt_truncated(self):
+        identity = pyrage.x25519.Identity.generate()
+        encrypted = pyrage.encrypt(b"test" * 1024, [identity.to_public()])
+
+        with self.assertRaises(pyrage.DecryptError):
+            pyrage.decrypt(encrypted[:-8], [identity])
+        with self.assertRaises(pyrage.DecryptError):
+            pyrage.decrypt_io(BytesIO(encrypted[:-8]), BytesIO(), [identity])
+
+    @unittest.skipUnless(os.path.exists("/dev/full"), "needs /dev/full")
+    def test_os_errors_are_oserror(self):
+        identity = pyrage.x25519.Identity.generate()
+        recipient = identity.to_public()
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            plaintext = os.path.join(tempdir, "plaintext")
+            encrypted = os.path.join(tempdir, "encrypted")
+            with open(plaintext, "wb") as file:
+                file.write(os.urandom(1024 * 1024))
+            pyrage.encrypt_file(plaintext, encrypted, [recipient])
+
+            # Writes to /dev/full fail with ENOSPC.
+            with self.assertRaises(OSError):
+                pyrage.encrypt_file(plaintext, "/dev/full", [recipient])
+            with self.assertRaises(OSError):
+                pyrage.decrypt_file(encrypted, "/dev/full", [identity])
+
     @parameterized.expand([(False,), (True,)])
     def test_roundtrip_file(self, armored):
         identity = pyrage.x25519.Identity.generate()

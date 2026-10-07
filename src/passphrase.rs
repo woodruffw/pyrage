@@ -1,14 +1,12 @@
-use std::{
-    io::{Read, Write},
-    iter,
-};
+use std::iter;
 
-use age::{
-    armor::ArmoredReader, armor::ArmoredWriter, armor::Format, scrypt, Decryptor, Encryptor,
-};
+use age::{scrypt, Encryptor};
 use pyo3::{prelude::*, types::PyBytes};
 
-use crate::{DecryptError, EncryptError};
+use crate::{decrypt_stream, encrypt_stream};
+
+// scrypt is deliberately slow (on the order of a second), so both directions
+// release the GIL for the whole operation, key derivation included.
 
 #[pyfunction]
 #[pyo3(signature = (plaintext, passphrase, armored=false))]
@@ -18,50 +16,36 @@ fn encrypt<'p>(
     passphrase: &str,
     armored: bool,
 ) -> PyResult<Bound<'p, PyBytes>> {
-    let encryptor = Encryptor::with_user_passphrase(passphrase.into());
-    let mut encrypted = vec![];
-
-    let writer_result = match armored {
-        true => encryptor.wrap_output(
-            ArmoredWriter::wrap_output(&mut encrypted, Format::AsciiArmor)
-                .map_err(|e| EncryptError::new_err(e.to_string()))?,
-        ),
-        false => encryptor.wrap_output(
-            ArmoredWriter::wrap_output(&mut encrypted, Format::Binary)
-                .map_err(|e| EncryptError::new_err(e.to_string()))?,
-        ),
-    };
-
-    let mut writer = writer_result.map_err(|e| EncryptError::new_err(e.to_string()))?;
-
-    writer
-        .write_all(plaintext)
-        .map_err(|e| EncryptError::new_err(e.to_string()))?;
-
-    writer
-        .finish()
-        .map_err(|e| EncryptError::new_err(e.to_string()))?
-        .finish()
-        .map_err(|e| EncryptError::new_err(e.to_string()))?;
+    let encrypted = py.detach(|| {
+        let encryptor = Encryptor::with_user_passphrase(passphrase.into());
+        encrypt_stream(plaintext, vec![], encryptor, armored)
+    })?;
 
     Ok(PyBytes::new(py, &encrypted))
 }
 
+// `max_work_factor` caps the scrypt work factor (`log2(N)`) `decrypt`
+// accepts. By default age derives the cap from a timing benchmark (four
+// above what takes ~1s here) and rejects anything more expensive; that
+// benchmark can come out low on a busy machine, so callers may pass a fixed
+// cap instead.
 #[pyfunction]
+#[pyo3(signature = (ciphertext, passphrase, max_work_factor=None))]
 fn decrypt<'p>(
     py: Python<'p>,
     ciphertext: &[u8],
     passphrase: &str,
+    max_work_factor: Option<u8>,
 ) -> PyResult<Bound<'p, PyBytes>> {
-    let decryptor = Decryptor::new_buffered(ArmoredReader::new(ciphertext))
-        .map_err(|e| DecryptError::new_err(e.to_string()))?;
-    let mut decrypted = vec![];
-    let mut reader = decryptor
-        .decrypt(iter::once(&scrypt::Identity::new(passphrase.into()) as _))
-        .map_err(|e| DecryptError::new_err(e.to_string()))?;
-    reader
-        .read_to_end(&mut decrypted)
-        .map_err(|e| DecryptError::new_err(e.to_string()))?;
+    let decrypted = py.detach(|| {
+        let mut identity = scrypt::Identity::new(passphrase.into());
+        if let Some(max_work_factor) = max_work_factor {
+            identity.set_max_work_factor(max_work_factor);
+        }
+        let mut decrypted = vec![];
+        decrypt_stream(ciphertext, &mut decrypted, iter::once(&identity as _))?;
+        PyResult::Ok(decrypted)
+    })?;
 
     Ok(PyBytes::new(py, &decrypted))
 }
