@@ -82,5 +82,10 @@ class TestReleasesGil(unittest.TestCase):
             lambda: pyrage.decrypt_io(encrypted, BytesIO(), [identity])
         )
 
+    def test_passphrase(self):
+        encrypted = pyrage.passphrase.encrypt(b"test", "password")
+        self.assertReleasesGil(lambda: pyrage.passphrase.encrypt(b"test", "password"))
+        self.assertReleasesGil(lambda: pyrage.passphrase.decrypt(encrypted, "password"))
+
 if __name__ == "__main__":
     unittest.main()
