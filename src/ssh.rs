@@ -28,7 +28,7 @@ impl Identity {
     #[classmethod]
     #[pyo3(signature = (buf, passphrase = None))]
     fn from_buffer(
-        _cls: &Bound<'_, PyType>,
+        cls: &Bound<'_, PyType>,
         buf: &[u8],
         passphrase: Option<&str>,
     ) -> PyResult<Self> {
@@ -39,8 +39,10 @@ impl Identity {
             age::ssh::Identity::Unencrypted(_) => Ok(Self(identity)),
             age::ssh::Identity::Encrypted(ek) => {
                 if let Some(pass) = passphrase {
-                    let decrypted_key = ek
-                        .decrypt(pass.into())
+                    // The key's KDF (bcrypt-pbkdf) is deliberately slow.
+                    let decrypted_key = cls
+                        .py()
+                        .detach(|| ek.decrypt(pass.into()))
                         .map_err(|e| IdentityError::new_err(e.to_string()))?;
 
                     Ok(Self(age::ssh::Identity::Unencrypted(decrypted_key)))

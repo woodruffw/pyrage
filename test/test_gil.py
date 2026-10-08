@@ -4,6 +4,7 @@ import threading
 import time
 import unittest
 from io import BytesIO
+from pathlib import Path
 
 import pyrage
 
@@ -82,10 +83,15 @@ class TestReleasesGil(unittest.TestCase):
             lambda: pyrage.decrypt_io(encrypted, BytesIO(), [identity])
         )
 
+
     def test_passphrase(self):
         encrypted = pyrage.passphrase.encrypt(b"test", "password")
         self.assertReleasesGil(lambda: pyrage.passphrase.encrypt(b"test", "password"))
         self.assertReleasesGil(lambda: pyrage.passphrase.decrypt(encrypted, "password"))
+
+    def test_ssh_encrypted_key(self):
+        key = (Path(__file__).parent / "assets" / "ed25519-encrypted").read_bytes()
+        self.assertReleasesGil(lambda: pyrage.ssh.Identity.from_buffer(key, "asdfghjkl"))
 
 if __name__ == "__main__":
     unittest.main()
