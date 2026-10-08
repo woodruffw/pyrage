@@ -75,6 +75,19 @@ encrypted = passphrase.encrypt(b"something secret", "my extremely secure passwor
 decrypted = passphrase.decrypt(encrypted, "my extremely secure password")
 ```
 
+### Threads and asyncio
+
+All `encrypt*`/`decrypt*` functions release the GIL while they work, so they
+can run in a thread pool without blocking other Python threads:
+
+```python
+import asyncio
+from pyrage import encrypt, decrypt
+
+# in a thread, via asyncio
+encrypted = await asyncio.to_thread(encrypt, b"...", [carol])
+```
+
 ## Development
 
 ```console
