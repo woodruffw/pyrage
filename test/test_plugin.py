@@ -89,6 +89,21 @@ class TestPluginRoundtrip(unittest.TestCase):
             ["hello from recipient-v1", "hello from identity-v1"], callbacks.messages
         )
 
+    def test_roundtrip_io(self):
+        callbacks = Callbacks()
+        with tempfile.TemporaryFile() as plaintext, tempfile.TemporaryFile() as encrypted:
+            plaintext.write(b"test")
+            plaintext.seek(0)
+            pyrage.encrypt_io(plaintext, encrypted, [self._recipient(callbacks)])
+            encrypted.seek(0)
+
+            with tempfile.TemporaryFile() as decrypted:
+                pyrage.decrypt_io(encrypted, decrypted, [self._identity(callbacks)])
+                decrypted.seek(0)
+                self.assertEqual(b"test", decrypted.read())
+
+        self.assertEqual(2, len(callbacks.messages))
+
 
 if __name__ == "__main__":
     unittest.main()

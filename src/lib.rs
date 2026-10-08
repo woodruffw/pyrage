@@ -315,66 +315,81 @@ fn from_pyobject(file: Py<PyAny>, read_only: bool) -> PyResult<PyFileLikeObject>
     PyFileLikeObject::with_requirements(file, read_only, !read_only, false, false)
 }
 
+// NOTE: `PyFileLikeObject` re-acquires the GIL for each read/write, so the
+// crypto work in the `_io` variants still runs with the GIL released.
 #[pyfunction]
 #[pyo3(signature = (reader, writer, recipients, armored=false))]
 fn encrypt_io(
+    py: Python<'_>,
     reader: Py<PyAny>,
     writer: Py<PyAny>,
     recipients: Vec<Box<dyn PyrageRecipient>>,
     armored: bool,
 ) -> PyResult<()> {
-    // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
-    // is what the underlying `age` API expects.
-    let recipients = recipients
-        .into_iter()
-        .map(|pr| pr.as_recipient())
-        .collect::<Vec<_>>();
+    // The file-likes are created (and dropped) while holding the GIL; only
+    // borrows of them cross into the detached section.
     let reader = from_pyobject(reader, true)?;
     let writer = from_pyobject(writer, false)?;
     let mut reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
 
-    let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
-        .map_err(|e| EncryptError::new_err(e.to_string()))?;
+    py.detach(|| {
+        // This turns each `dyn PyrageRecipient` into a `dyn Recipient`, which
+        // is what the underlying `age` API expects.
+        let recipients = recipients
+            .into_iter()
+            .map(|pr| pr.as_recipient())
+            .collect::<Vec<_>>();
 
-    let mut writer = match armored {
-        true => encryptor
-            .wrap_output(ArmoredWriter::wrap_output(&mut writer, Format::AsciiArmor)?)
-            .map_err(|e| EncryptError::new_err(e.to_string()))?,
-        false => encryptor
-            .wrap_output(ArmoredWriter::wrap_output(&mut writer, Format::Binary)?)
-            .map_err(|e| EncryptError::new_err(e.to_string()))?,
-    };
+        let encryptor = Encryptor::with_recipients(recipients.iter().map(|r| r.as_ref()))
+            .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
-    std::io::copy(&mut reader, &mut writer).map_err(|e| EncryptError::new_err(e.to_string()))?;
+        let mut writer = match armored {
+            true => encryptor
+                .wrap_output(ArmoredWriter::wrap_output(&mut writer, Format::AsciiArmor)?)
+                .map_err(|e| EncryptError::new_err(e.to_string()))?,
+            false => encryptor
+                .wrap_output(ArmoredWriter::wrap_output(&mut writer, Format::Binary)?)
+                .map_err(|e| EncryptError::new_err(e.to_string()))?,
+        };
 
-    writer
-        .finish()
-        .map_err(|e| EncryptError::new_err(e.to_string()))?
-        .finish()
-        .map_err(|e| EncryptError::new_err(e.to_string()))?;
+        std::io::copy(&mut reader, &mut writer)
+            .map_err(|e| EncryptError::new_err(e.to_string()))?;
 
-    Ok(())
+        writer
+            .finish()
+            .map_err(|e| EncryptError::new_err(e.to_string()))?
+            .finish()
+            .map_err(|e| EncryptError::new_err(e.to_string()))?;
+
+        Ok(())
+    })
 }
 
 #[pyfunction]
 fn decrypt_io(
+    py: Python<'_>,
     reader: Py<PyAny>,
     writer: Py<PyAny>,
     identities: Vec<Box<dyn PyrageIdentity>>,
 ) -> PyResult<()> {
-    let identities = identities.iter().map(|pi| pi.as_ref().as_identity());
+    // See `encrypt_io`: the file-likes never get dropped without the GIL.
     let reader = from_pyobject(reader, true)?;
     let writer = from_pyobject(writer, false)?;
-    let reader = std::io::BufReader::new(reader);
+    let mut reader = std::io::BufReader::new(reader);
     let mut writer = std::io::BufWriter::new(writer);
-    let decryptor = age::Decryptor::new_buffered(ArmoredReader::new(reader))
-        .map_err(|e| DecryptError::new_err(e.to_string()))?;
-    let mut reader = decryptor
-        .decrypt(identities)
-        .map_err(|e| DecryptError::new_err(e.to_string()))?;
-    std::io::copy(&mut reader, &mut writer)?;
-    Ok(())
+    py.detach(|| {
+        // Move the identities in (they're only `Send`); the file-likes stay
+        // borrowed so they are dropped with the GIL held.
+        let identities = identities;
+        let decryptor = age::Decryptor::new_buffered(ArmoredReader::new(&mut reader))
+            .map_err(|e| DecryptError::new_err(e.to_string()))?;
+        let mut reader = decryptor
+            .decrypt(identities.iter().map(|pi| pi.as_ref().as_identity()))
+            .map_err(|e| DecryptError::new_err(e.to_string()))?;
+        std::io::copy(&mut reader, &mut writer)?;
+        Ok(())
+    })
 }
 
 #[pymodule]

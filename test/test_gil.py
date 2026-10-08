@@ -3,6 +3,7 @@ import tempfile
 import threading
 import time
 import unittest
+from io import BytesIO
 
 import pyrage
 
@@ -63,6 +64,23 @@ class TestReleasesGil(unittest.TestCase):
                 lambda: pyrage.decrypt_file(encrypted, decrypted, [identity])
             )
 
+
+    def test_io(self):
+        identity = pyrage.x25519.Identity.generate()
+        # Smaller than above: each chunk re-acquires the GIL, which waits on
+        # our spinning thread for up to the switch interval.
+        plaintext = b"\x00" * (4 * 1024 * 1024)
+        encrypted = BytesIO()
+
+        self.assertReleasesGil(
+            lambda: pyrage.encrypt_io(
+                BytesIO(plaintext), encrypted, [identity.to_public()]
+            )
+        )
+        encrypted.seek(0)
+        self.assertReleasesGil(
+            lambda: pyrage.decrypt_io(encrypted, BytesIO(), [identity])
+        )
 
 if __name__ == "__main__":
     unittest.main()
