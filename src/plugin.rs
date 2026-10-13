@@ -10,12 +10,16 @@ use crate::{DecryptError, EncryptError, IdentityError, RecipientError};
 ///
 /// Inner type is PyAny, because we do duck-typing at runtime, and
 /// declaring a protocol in the type stubs.
+///
+/// The `Py` is behind an `Arc` because `age` clones the callbacks while
+/// wrapping/unwrapping file keys, which we run with the GIL released,
+/// and cloning a bare `Py` without the GIL panics.
 #[derive(Clone)]
-pub(crate) struct PyCallbacks(Py<PyAny>);
+pub(crate) struct PyCallbacks(Arc<Py<PyAny>>);
 
 impl PyCallbacks {
     fn new(inner: Bound<'_, PyAny>) -> PyResult<Self> {
-        Ok(Self(inner.unbind()))
+        Ok(Self(Arc::new(inner.unbind())))
     }
 }
 
