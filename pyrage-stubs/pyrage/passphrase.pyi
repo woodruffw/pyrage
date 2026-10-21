@@ -1,2 +1,13 @@
+from io import BufferedIOBase
+
 def encrypt(plaintext: bytes, passphrase: str, armored: bool = False) -> bytes: ...
 def decrypt(ciphertext: bytes, passphrase: str, armored: bool = False) -> bytes: ...
+def encrypt_io(
+    reader: BufferedIOBase,
+    writer: BufferedIOBase,
+    passphrase: str,
+    armored: bool = False,
+) -> None: ...
+def decrypt_io(
+    reader: BufferedIOBase, writer: BufferedIOBase, passphrase: str
+) -> None: ...

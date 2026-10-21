@@ -291,7 +291,7 @@ fn decrypt_file(
     Ok(())
 }
 
-fn from_pyobject(file: Py<PyAny>, read_only: bool) -> PyResult<PyFileLikeObject> {
+pub(crate) fn from_pyobject(file: Py<PyAny>, read_only: bool) -> PyResult<PyFileLikeObject> {
     // is a file-like
     PyFileLikeObject::with_requirements(file, read_only, !read_only, false, false)
 }

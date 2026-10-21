@@ -69,10 +69,19 @@ decrypted = decrypt(encrypted, [alice, bob])
 ### Passphrase encryption and decryption
 
 ```python
+from io import BytesIO
+
 from pyrage import passphrase
 
 encrypted = passphrase.encrypt(b"something secret", "my extremely secure password")
 decrypted = passphrase.decrypt(encrypted, "my extremely secure password")
+
+# Streaming variants (file-like IO; does not buffer the whole payload)
+ciphertext = BytesIO()
+plaintext = BytesIO()
+passphrase.encrypt_io(BytesIO(b"something secret"), ciphertext, "my extremely secure password")
+ciphertext.seek(0)
+passphrase.decrypt_io(ciphertext, plaintext, "my extremely secure password")
 ```
 
 ## Development
